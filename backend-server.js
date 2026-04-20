@@ -13,6 +13,9 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
+app.get("/", (req, res) => {
+  res.send("API is running");
+});
 const PORT = process.env.PORT || 5000;
 
 // ── MIDDLEWARE ──────────────────────────────────────────────────
