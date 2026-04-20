@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mardan Help Portal – Be the Someone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #18181f;
+  --bg4: #1e1e28;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #f0f0f5;
+  --text2: #9090a8;
+  --text3: #5a5a72;
+  --accent: #6c63ff;
+  --accent2: #8b85ff;
+  --accent-glow: rgba(108,99,255,0.25);
+  --green: #22d3a0;
+  --green2: rgba(34,211,160,0.15);
+  --red: #ff5a5a;
+  --red2: rgba(255,90,90,0.15);
+  --amber: #ffa94d;
+  --amber2: rgba(255,169,77,0.15);
+  --blue: #4db8ff;
+  --blue2: rgba(77,184,255,0.15);
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --radius: 12px;
+  --radius2: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+[data-theme="light"] {
+  --bg: #f5f5f8;
+  --bg2: #ffffff;
+  --bg3: #ebebf2;
+  --bg4: #e0e0ea;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text: #0f0f1a;
+  --text2: #5a5a72;
+  --text3: #9090a8;
+  --accent-glow: rgba(108,99,255,0.12);
+  --green2: rgba(34,211,160,0.1);
+  --red2: rgba(255,90,90,0.1);
+  --amber2: rgba(255,169,77,0.1);
+  --blue2: rgba(77,184,255,0.1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+/* ─── LAYOUT ─── */
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 240px; min-height: 100vh; background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; top:0; left:0; z-index:100;
+  transition: var(--transition);
+}
+.sidebar.collapsed { width: 64px; }
+.main { margin-left: 240px; flex: 1; transition: var(--transition); }
+.main.expanded { margin-left: 64px; }
+
+/* SIDEBAR */
+.sidebar-logo {
+  padding: 20px 16px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.logo-text { font-family: var(--font-head); font-weight: 800; font-size: 14px; line-height: 1.2; }
+.logo-text span { display: block; color: var(--text2); font-size: 11px; font-weight: 400; }
+.sidebar-nav { padding: 12px 8px; flex: 1; }
+.nav-section { margin-bottom: 4px; }
+.nav-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text3); padding: 8px 8px 4px;
+  overflow: hidden; white-space: nowrap;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 8px; border-radius: var(--radius2);
+  cursor: pointer; transition: var(--transition);
+  color: var(--text2); font-size: 13.5px; font-weight: 500;
+  position: relative; white-space: nowrap;
+  border: 1px solid transparent;
+}
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active {
+  background: var(--accent-glow); color: var(--accent2);
+  border-color: rgba(108,99,255,0.2);
+}
+.nav-item .icon { font-size: 16px; flex-shrink: 0; width: 20px; text-align: center; }
+.nav-badge {
+  margin-left: auto; background: var(--red); color: #fff;
+  font-size: 10px; padding: 2px 6px; border-radius: 20px; font-weight: 600;
+}
+.sidebar-footer { padding: 12px 8px; border-top: 1px solid var(--border); }
+.user-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px; border-radius: var(--radius2); cursor: pointer;
+  transition: var(--transition);
+}
+.user-card:hover { background: var(--bg3); }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--green));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.user-info { overflow: hidden; }
+.user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 11px; color: var(--text2); }
+
+/* TOPBAR */
+.topbar {
+  height: 60px; background: var(--bg2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 24px;
+  gap: 16px; position: sticky; top:0; z-index:50;
+}
+.topbar-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; flex:1; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--radius2);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  border: 1px solid var(--border2); background: var(--bg3);
+  color: var(--text); transition: var(--transition); font-family: var(--font-body);
+}
+.btn:hover { background: var(--bg4); }
+.btn-primary {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn-danger { background: var(--red2); border-color: var(--red); color: var(--red); }
+.btn-success { background: var(--green2); border-color: var(--green); color: var(--green); }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: var(--radius2);
+  border: 1px solid var(--border); background: var(--bg3);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: var(--transition); font-size: 15px;
+  color: var(--text2);
+}
+.icon-btn:hover { background: var(--bg4); color: var(--text); }
+
+/* PAGES */
+.page { display: none; padding: 24px; }
+.page.active { display: block; }
+
+/* HERO */
+.hero {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 48px 40px;
+  margin-bottom: 24px;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; top: -60px; right: -60px;
+  width: 300px; height: 300px; border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent-glow); border: 1px solid rgba(108,99,255,0.3);
+  color: var(--accent2); font-size: 12px; font-weight: 600;
+  padding: 4px 12px; border-radius: 20px; margin-bottom: 16px;
+}
+.hero h1 {
+  font-family: var(--font-head);
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 800; line-height: 1.15;
+  margin-bottom: 12px;
+}
+.hero h1 span { color: var(--accent2); }
+.hero p { color: var(--text2); font-size: 15px; max-width: 560px; line-height: 1.7; margin-bottom: 24px; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero-stats {
+  display: flex; gap: 32px; margin-top: 32px;
+  padding-top: 24px; border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.hero-stat .num {
+  font-family: var(--font-head); font-size: 28px; font-weight: 800;
+  background: linear-gradient(135deg, var(--text), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-stat .lbl { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+/* CARDS */
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  transition: var(--transition);
+}
+.card:hover { border-color: var(--border2); }
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title { font-family: var(--font-head); font-size: 15px; font-weight: 700; }
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+
+/* STAT CARDS */
+.stat-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  position: relative; overflow: hidden;
+}
+.stat-card::after {
+  content: ''; position: absolute; bottom: -20px; right: -20px;
+  width: 80px; height: 80px; border-radius: 50%;
+  opacity: 0.08;
+}
+.stat-card.blue::after { background: var(--blue); }
+.stat-card.green::after { background: var(--green); }
+.stat-card.amber::after { background: var(--amber); }
+.stat-card.red::after { background: var(--red); }
+.stat-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 12px;
+}
+.stat-icon.blue { background: var(--blue2); }
+.stat-icon.green { background: var(--green2); }
+.stat-icon.amber { background: var(--amber2); }
+.stat-icon.red { background: var(--red2); }
+.stat-num {
+  font-family: var(--font-head); font-size: 30px; font-weight: 800;
+  line-height: 1;
+}
+.stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.stat-change {
+  font-size: 12px; margin-top: 8px;
+  display: flex; align-items: center; gap: 4px;
+}
+.stat-change.up { color: var(--green); }
+.stat-change.down { color: var(--red); }
+
+/* STATUS BADGES */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+}
+.badge-pending { background: var(--amber2); color: var(--amber); }
+.badge-progress { background: var(--blue2); color: var(--blue); }
+.badge-done { background: var(--green2); color: var(--green); }
+.badge-emergency { background: var(--red2); color: var(--red); }
+.badge-verified { background: var(--accent-glow); color: var(--accent2); }
+
+/* PROBLEM CARDS */
+.problem-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  transition: var(--transition); cursor: pointer;
+}
+.problem-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow); }
+.problem-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.problem-title { font-family: var(--font-head); font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.problem-desc { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; }
+.problem-footer { display: flex; align-items: center; justify-content: space-between; }
+.problem-stats { display: flex; gap: 12px; }
+.pstat { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text3); }
+.cat-tag {
+  font-size: 11px; padding: 2px 8px; border-radius: 4px;
+  border: 1px solid var(--border); color: var(--text2);
+}
+.vote-btn {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 12px; border-radius: var(--radius2);
+  border: 1px solid var(--border); background: var(--bg3);
+  cursor: pointer; font-size: 12px; color: var(--text2);
+  transition: var(--transition);
+}
+.vote-btn:hover { border-color: var(--green); color: var(--green); background: var(--green2); }
+.vote-btn.voted { border-color: var(--green); color: var(--green); background: var(--green2); }
+
+/* FORM */
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; display: block; letter-spacing: 0.5px; text-transform: uppercase; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius2); padding: 10px 14px;
+  color: var(--text); font-family: var(--font-body); font-size: 14px;
+  transition: var(--transition); outline: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.form-select { cursor: pointer; }
+.form-select option { background: var(--bg3); }
+.form-textarea { resize: vertical; min-height: 100px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* IMAGE UPLOAD */
+.upload-zone {
+  border: 2px dashed var(--border2); border-radius: var(--radius);
+  padding: 32px; text-align: center; cursor: pointer;
+  transition: var(--transition); background: var(--bg3);
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--accent); background: var(--accent-glow);
+}
+.upload-icon { font-size: 32px; margin-bottom: 8px; }
+.upload-text { font-size: 13px; color: var(--text2); }
+.upload-text strong { color: var(--accent2); }
+.preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px,1fr)); gap: 8px; margin-top: 12px; }
+.preview-img {
+  width: 80px; height: 80px; border-radius: var(--radius2);
+  object-fit: cover; border: 1px solid var(--border);
+}
+
+/* MAP */
+#map { height: 420px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.leaflet-popup-content-wrapper {
+  background: var(--bg2) !important; color: var(--text) !important;
+  border: 1px solid var(--border2) !important; border-radius: var(--radius2) !important;
+  box-shadow: var(--shadow) !important;
+}
+.leaflet-popup-tip { background: var(--bg2) !important; }
+
+/* CHATBOT */
+.chatbot-container {
+  position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+}
+.chatbot-bubble {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent); display: flex; align-items: center;
+  justify-content: center; cursor: pointer; font-size: 22px;
+  box-shadow: 0 4px 20px var(--accent-glow);
+  transition: var(--transition); border: none;
+  animation: pulse-chat 2s infinite;
+}
+.chatbot-bubble:hover { transform: scale(1.1); }
+@keyframes pulse-chat {
+  0%,100% { box-shadow: 0 4px 20px var(--accent-glow); }
+  50% { box-shadow: 0 4px 32px rgba(108,99,255,0.5); }
+}
+.chat-window {
+  position: absolute; bottom: 68px; right: 0;
+  width: 340px; background: var(--bg2);
+  border: 1px solid var(--border2); border-radius: var(--radius);
+  box-shadow: var(--shadow); display: none; flex-direction: column;
+  max-height: 480px; overflow: hidden;
+}
+.chat-window.open { display: flex; }
+.chat-header {
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.chat-ai-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--green));
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.chat-title { font-family: var(--font-head); font-size: 14px; font-weight: 700; }
+.chat-status { font-size: 11px; color: var(--green); display: flex; align-items: center; gap: 4px; }
+.chat-status::before { content: ''; width: 6px; height: 6px; background: var(--green); border-radius: 50%; display: inline-block; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.chat-msg {
+  max-width: 85%; padding: 8px 12px; border-radius: 12px;
+  font-size: 13px; line-height: 1.5;
+}
+.chat-msg.bot { background: var(--bg3); color: var(--text); border-bottom-left-radius: 4px; align-self: flex-start; }
+.chat-msg.user { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; align-self: flex-end; }
+.chat-msg.emergency { background: var(--red2); border: 1px solid var(--red); color: var(--text); }
+.chat-input-row {
+  padding: 10px 12px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px;
+}
+.chat-input {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius2); padding: 8px 12px;
+  color: var(--text); font-size: 13px; outline: none;
+  font-family: var(--font-body);
+}
+.chat-input:focus { border-color: var(--accent); }
+.chat-send {
+  width: 34px; height: 34px; border-radius: var(--radius2);
+  background: var(--accent); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+  color: #fff; flex-shrink: 0;
+}
+.emergency-alert {
+  background: var(--red2); border: 1px solid var(--red);
+  border-radius: var(--radius2); padding: 10px 12px;
+  margin: 8px 12px; font-size: 12px; color: var(--red);
+  display: none;
+}
+.emergency-alert.show { display: block; }
+
+/* LEADERBOARD */
+.lb-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px; border-radius: var(--radius2);
+  border: 1px solid var(--border); margin-bottom: 8px;
+  background: var(--bg3); transition: var(--transition);
+}
+.lb-item:hover { border-color: var(--border2); }
+.lb-rank {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; flex-shrink: 0;
+}
+.lb-rank.r1 { background: linear-gradient(135deg,#ffd700,#ffb300); color: #000; }
+.lb-rank.r2 { background: linear-gradient(135deg,#c0c0c0,#999); color: #000; }
+.lb-rank.r3 { background: linear-gradient(135deg,#cd7f32,#a0522d); color: #fff; }
+.lb-rank.r4 { background: var(--bg4); color: var(--text2); }
+.lb-info { flex: 1; }
+.lb-name { font-size: 13px; font-weight: 600; }
+.lb-contrib { font-size: 11px; color: var(--text3); }
+.lb-points {
+  font-family: var(--font-head); font-size: 16px; font-weight: 800;
+  color: var(--accent2);
+}
+.lb-bar { height: 3px; background: var(--bg4); border-radius: 2px; margin-top: 4px; }
+.lb-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width 1s ease; }
+
+/* TIMELINE */
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before {
+  content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
+  width: 1px; background: var(--border2);
+}
+.tl-item { position: relative; margin-bottom: 20px; }
+.tl-dot {
+  position: absolute; left: -20px; top: 4px;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--bg2);
+}
+.tl-dot.done { background: var(--green); }
+.tl-dot.progress { background: var(--accent); }
+.tl-dot.pending { background: var(--border2); }
+.tl-date { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+.tl-text { font-size: 13px; color: var(--text2); }
+
+/* PROGRESS BAR */
+.progress-bar { height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 1.2s ease; }
+.progress-fill.blue { background: linear-gradient(90deg, var(--accent), var(--blue)); }
+.progress-fill.green { background: linear-gradient(90deg, var(--green), #4ade80); }
+.progress-fill.amber { background: linear-gradient(90deg, var(--amber), #fcd34d); }
+
+/* TABS */
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+.tab {
+  padding: 8px 16px; font-size: 13px; font-weight: 500;
+  cursor: pointer; border-radius: var(--radius2) var(--radius2) 0 0;
+  color: var(--text2); transition: var(--transition);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab:hover { color: var(--text); background: var(--bg3); }
+.tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 500; display: none; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 28px;
+  max-width: 560px; width: 90%; max-height: 85vh; overflow-y: auto;
+  position: relative;
+}
+.modal-title { font-family: var(--font-head); font-size: 20px; font-weight: 800; margin-bottom: 20px; }
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--text2);
+}
+.modal-close:hover { background: var(--bg4); }
+
+/* AUTH */
+.auth-screen {
+  position: fixed; inset: 0; background: var(--bg);
+  z-index: 999; display: flex; align-items: center; justify-content: center;
+}
+.auth-box {
+  width: 100%; max-width: 420px; padding: 40px 36px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 20px; box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+.auth-logo { text-align: center; margin-bottom: 28px; }
+.auth-logo .icon { font-size: 40px; }
+.auth-logo h2 { font-family: var(--font-head); font-size: 22px; font-weight: 800; margin-top: 8px; }
+.auth-logo p { color: var(--text2); font-size: 13px; margin-top: 4px; }
+.auth-tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: var(--radius2); padding: 3px; margin-bottom: 24px; }
+.auth-tab { flex: 1; text-align: center; padding: 7px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); transition: var(--transition); }
+.auth-tab.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.social-btn {
+  width: 100%; padding: 10px; border-radius: var(--radius2);
+  border: 1px solid var(--border2); background: var(--bg3);
+  color: var(--text); font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: var(--transition); margin-bottom: 8px;
+  font-family: var(--font-body);
+}
+.social-btn:hover { background: var(--bg4); }
+.divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+.divider span { font-size: 12px; color: var(--text3); }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.forgot-link { font-size: 12px; color: var(--accent2); cursor: pointer; text-align: right; margin-top: -8px; margin-bottom: 16px; }
+
+/* NOTIFICATION */
+.notif {
+  position: fixed; top: 80px; right: 24px; z-index: 2000;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius2); padding: 12px 16px;
+  font-size: 13px; max-width: 300px; box-shadow: var(--shadow);
+  transform: translateX(360px); transition: transform 0.3s ease;
+  display: flex; align-items: center; gap: 10px;
+}
+.notif.show { transform: translateX(0); }
+.notif.success { border-left: 3px solid var(--green); }
+.notif.error { border-left: 3px solid var(--red); }
+.notif.info { border-left: 3px solid var(--accent); }
+.notif.warn { border-left: 3px solid var(--amber); }
+
+/* ACTIVITY FEED */
+.feed-item {
+  display: flex; gap: 12px; padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.feed-item:last-child { border-bottom: none; }
+.feed-dot {
+  width: 8px; height: 8px; border-radius: 50%; margin-top: 6px;
+  flex-shrink: 0; background: var(--accent);
+}
+.feed-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+.feed-text strong { color: var(--text); }
+.feed-time { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+/* ADMIN */
+.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.admin-table th {
+  text-align: left; padding: 10px 14px; font-size: 11px;
+  font-weight: 600; color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.5px; border-bottom: 1px solid var(--border);
+}
+.admin-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.admin-table tr:hover td { background: var(--bg3); }
+.admin-table tr:last-child td { border-bottom: none; }
+
+/* SEARCH BAR */
+.search-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius2); padding: 8px 14px;
+  margin-bottom: 16px;
+}
+.search-bar input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-size: 14px; font-family: var(--font-body);
+}
+.search-bar span { color: var(--text3); font-size: 16px; }
+
+/* FILTER CHIPS */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-chip {
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--bg3);
+  font-size: 12px; cursor: pointer; transition: var(--transition);
+  color: var(--text2);
+}
+.filter-chip:hover { border-color: var(--border2); color: var(--text); }
+.filter-chip.active { background: var(--accent-glow); border-color: rgba(108,99,255,0.3); color: var(--accent2); }
+
+/* DONATION */
+.donation-bar { background: var(--bg3); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+.donation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.donation-title { font-size: 14px; font-weight: 600; }
+.donation-amount { font-family: var(--font-head); font-size: 18px; font-weight: 800; color: var(--green); }
+.donation-target { font-size: 12px; color: var(--text3); }
+
+/* VERIFIED BADGE */
+.verified { color: var(--accent2); font-size: 13px; }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .sidebar { width: 64px; }
+  .sidebar .logo-text, .sidebar .nav-item span:not(.icon), .sidebar .nav-label, .sidebar .user-info, .sidebar .nav-badge { display: none; }
+  .main { margin-left: 64px; }
+  .form-row { grid-template-columns: 1fr; }
+  .hero { padding: 28px 20px; }
+  .hero-stats { gap: 20px; }
+  .chat-window { width: 300px; }
+  .page { padding: 16px; }
+}
+@media (max-width: 480px) {
+  .topbar-title { font-size: 14px; }
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+@keyframes slideIn { from { opacity:0; transform: translateX(-12px); } to { opacity:1; transform: translateX(0); } }
+.fade-in { animation: fadeIn 0.4s ease forwards; }
+.slide-in { animation: slideIn 0.3s ease forwards; }
+
+/* SPINNER */
+.spinner {
+  width: 20px; height: 20px; border: 2px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 48px 20px; color: var(--text3); }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* TOOLTIP */
+[data-tooltip] { position: relative; }
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+  background: var(--bg4); color: var(--text); font-size: 12px;
+  padding: 4px 8px; border-radius: 4px; white-space: nowrap; z-index: 100;
+  border: 1px solid var(--border2);
+}
+
+/* POINTS BADGE */
+.points-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: linear-gradient(135deg, var(--accent), var(--green));
+  color: #fff; font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px;
+}
+
+/* SEPARATOR */
+.sep { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* TWO COL LAYOUT */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .three-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-box fade-in">
+    <div class="auth-logo">
+      <div class="icon">🏙️</div>
+      <h2>Mardan Help Portal</h2>
+      <p>Stop waiting for someone. Be the Someone.</p>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')">Sign In</div>
+      <div class="auth-tab" id="signupTab" onclick="switchAuthTab('signup')">Register</div>
+    </div>
+    <div id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" class="form-input" placeholder="you@example.com" id="loginEmail" value="demo@mardan.pk">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" placeholder="Enter password" id="loginPass" value="demo1234">
+      </div>
+      <div class="forgot-link">Forgot password?</div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;" onclick="doLogin()">Sign In →</button>
+      <div class="divider"><span>or continue with</span></div>
+      <button class="social-btn" onclick="doLogin()">🌐 Continue with Google</button>
+    </div>
+    <div id="signupForm" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">First Name</label><input type="text" class="form-input" placeholder="Ahmad" id="signupFirst"></div>
+        <div class="form-group"><label class="form-label">Last Name</label><input type="text" class="form-input" placeholder="Khan" id="signupLast"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" placeholder="you@example.com" id="signupEmail"></div>
+      <div class="form-group"><label class="form-label">Phone (Optional)</label><input type="tel" class="form-input" placeholder="+92 300 1234567"></div>
+      <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" placeholder="Minimum 8 characters" id="signupPass"></div>
+      <div class="form-group"><label class="form-label">Area in Mardan</label>
+        <select class="form-select">
+          <option>Select your area</option>
+          <option>City Center</option><option>Katlang Road</option><option>Hoti</option>
+          <option>Rustam</option><option>Takht Bhai</option><option>Toru</option>
+          <option>Shergarh</option><option>Lundkhwar</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;" onclick="doSignup()">Create Account →</button>
+    </div>
+    <p style="text-align:center;font-size:11px;color:var(--text3);margin-top:16px;">By continuing, you agree to our Terms of Service & Privacy Policy</p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="mainApp" style="display:none">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🏙️</div>
+      <div class="logo-text">Mardan Help<span>Portal — Khyber Pakhtunkhwa</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-label">Main</div>
+        <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span><span>Dashboard</span></div>
+        <div class="nav-item" onclick="showPage('problems')"><span class="icon">📌</span><span>Problems</span><span class="nav-badge" id="pendingBadge">12</span></div>
+        <div class="nav-item" onclick="showPage('report')"><span class="icon">✏️</span><span>Report Issue</span></div>
+        <div class="nav-item" onclick="showPage('map')"><span class="icon">🗺️</span><span>Live Map</span></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Community</div>
+        <div class="nav-item" onclick="showPage('leaderboard')"><span class="icon">🏆</span><span>Leaderboard</span></div>
+        <div class="nav-item" onclick="showPage('feed')"><span class="icon">📡</span><span>Activity Feed</span></div>
+        <div class="nav-item" onclick="showPage('donations')"><span class="icon">💰</span><span>Fund Tracker</span></div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Account</div>
+        <div class="nav-item" onclick="showPage('profile')"><span class="icon">👤</span><span>My Profile</span></div>
+        <div class="nav-item" onclick="showPage('admin')"><span class="icon">⚙️</span><span>Admin Panel</span></div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card" onclick="showPage('profile')">
+        <div class="avatar" id="sidebarAvatar">AK</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebarName">Ahmad Khan</div>
+          <div class="user-role">Active Citizen ⭐</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main" id="mainContent">
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="icon-btn" onclick="toggleSidebar()">☰</div>
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="icon-btn" id="themeToggle" onclick="toggleTheme()" data-tooltip="Toggle theme">🌙</div>
+        <div class="icon-btn" data-tooltip="Notifications">🔔</div>
+        <button class="btn btn-primary" onclick="showPage('report')">+ Report Issue</button>
+      </div>
+    </div>
+
+    <!-- ═══ DASHBOARD PAGE ═══ -->
+    <div class="page active fade-in" id="page-dashboard">
+      <!-- HERO -->
+      <div class="hero">
+        <div class="hero-tag">🏙️ Mardan, Khyber Pakhtunkhwa</div>
+        <h1>Mardan Help Portal –<br><span>Stop Waiting for Someone.</span><br>Be the Someone.</h1>
+        <p>Report problems, connect with fellow citizens, track real solutions. Every report creates accountability. Every action builds our city.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" onclick="showPage('report')">🚨 Report a Problem</button>
+          <button class="btn" onclick="showPage('map')">🗺️ View Live Map</button>
+          <button class="btn" onclick="showPage('problems')">📌 Browse Issues</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><div class="num" id="heroTotal">247</div><div class="lbl">Total Reports</div></div>
+          <div class="hero-stat"><div class="num" id="heroSolved">89</div><div class="lbl">Resolved</div></div>
+          <div class="hero-stat"><div class="num" id="heroCitizens">1.2K</div><div class="lbl">Active Citizens</div></div>
+          <div class="hero-stat"><div class="num" id="heroImpact">36%</div><div class="lbl">Resolution Rate</div></div>
+        </div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="grid grid-4" style="margin-bottom:20px">
+        <div class="stat-card blue">
+          <div class="stat-icon blue">📌</div>
+          <div class="stat-num" id="statTotal">247</div>
+          <div class="stat-label">Total Problems</div>
+          <div class="stat-change up">↑ 18 this week</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-icon amber">⏳</div>
+          <div class="stat-num" id="statPending">124</div>
+          <div class="stat-label">Pending Review</div>
+          <div class="stat-change down">↓ 5 from last week</div>
+        </div>
+        <div class="stat-card blue" style="--stat-c:var(--blue)">
+          <div class="stat-icon blue">🔧</div>
+          <div class="stat-num" id="statProgress">34</div>
+          <div class="stat-label">In Progress</div>
+          <div class="stat-change up">↑ 8 active teams</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon green">✅</div>
+          <div class="stat-num" id="statDone">89</div>
+          <div class="stat-label">Completed</div>
+          <div class="stat-change up">↑ 12 this month</div>
+        </div>
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div class="two-col" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Problems by Category</div>
+            <span style="font-size:12px;color:var(--text3)">This Month</span>
+          </div>
+          <div style="position:relative;height:220px"><canvas id="catChart" role="img" aria-label="Bar chart of problem categories">Problems: Roads 68, Water 52, Garbage 45, Electric 38, Health 24, Other 20.</canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Monthly Trend</div>
+            <span style="font-size:12px;color:var(--text3)">2024–2025</span>
+          </div>
+          <div style="position:relative;height:220px"><canvas id="trendChart" role="img" aria-label="Line chart of monthly reports">Reports over months.</canvas></div>
+        </div>
+      </div>
+
+      <!-- BOTTOM ROW -->
+      <div class="two-col">
+        <!-- RECENT PROBLEMS -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent Reports</div>
+            <button class="btn" onclick="showPage('problems')" style="padding:5px 12px;font-size:12px">View All</button>
+          </div>
+          <div id="recentProblems"></div>
+        </div>
+        <!-- ACTIVITY FEED -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Live Activity</div>
+            <span class="badge badge-done" style="font-size:10px">● LIVE</span>
+          </div>
+          <div id="activityFeedSmall"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PROBLEMS PAGE ═══ -->
+    <div class="page fade-in" id="page-problems">
+      <div class="search-bar">
+        <span>🔍</span>
+        <input type="text" placeholder="Search problems in Mardan..." id="searchInput" oninput="filterProblems()">
+        <select class="form-select" style="width:160px;padding:4px 8px;font-size:13px" id="sortSelect" onchange="filterProblems()">
+          <option>Sort: Newest</option>
+          <option>Sort: Most Votes</option>
+          <option>Sort: Pending First</option>
+        </select>
+      </div>
+      <div class="filter-bar" id="filterBar">
+        <div class="filter-chip active" onclick="setFilter('All',this)">All</div>
+        <div class="filter-chip" onclick="setFilter('Road',this)">🛣️ Road</div>
+        <div class="filter-chip" onclick="setFilter('Water',this)">💧 Water</div>
+        <div class="filter-chip" onclick="setFilter('Garbage',this)">🗑️ Garbage</div>
+        <div class="filter-chip" onclick="setFilter('Electric',this)">⚡ Electric</div>
+        <div class="filter-chip" onclick="setFilter('Health',this)">🏥 Health</div>
+        <div class="filter-chip" onclick="setFilter('Emergency',this)">🚨 Emergency</div>
+        <div class="filter-chip" onclick="setFilter('Pending',this)">⏳ Pending</div>
+        <div class="filter-chip" onclick="setFilter('Done',this)">✅ Resolved</div>
+      </div>
+      <div class="grid grid-2" id="problemsGrid"></div>
+    </div>
+
+    <!-- ═══ REPORT PAGE ═══ -->
+    <div class="page fade-in" id="page-report">
+      <div style="max-width:680px">
+        <h2 style="font-family:var(--font-head);font-weight:800;margin-bottom:6px">Report a Problem</h2>
+        <p style="color:var(--text2);font-size:14px;margin-bottom:24px">Help Mardan by reporting real issues. Your report gets community attention and official tracking.</p>
+        <div class="card">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select class="form-select" id="rCategory">
+                <option value="">Select category</option>
+                <option>Road Damage</option><option>Garbage Problem</option><option>Water Issue</option>
+                <option>Electricity Problem</option><option>Health & Sanitation</option>
+                <option>Public Service</option><option>Emergency</option><option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Priority *</label>
+              <select class="form-select" id="rPriority">
+                <option>Low</option><option>Medium</option><option>High</option><option>Emergency</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Problem Title *</label>
+            <input type="text" class="form-input" placeholder="e.g., Large pothole near Gulshan Chowk" id="rTitle">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Detailed Description *</label>
+            <textarea class="form-textarea" placeholder="Describe the problem in detail. Include what you observed, how long it has been there, and how it affects people..." id="rDesc" style="min-height:120px"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Location / Area *</label>
+              <select class="form-select" id="rLocation">
+                <option>City Center</option><option>Katlang Road</option><option>Hoti Road</option>
+                <option>University Road</option><option>Rustam</option><option>Takht Bhai</option>
+                <option>Toru</option><option>Shergarh</option><option>Lundkhwar</option><option>Pir Qila</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Landmark (Optional)</label>
+              <input type="text" class="form-input" placeholder="Near mosque, school, etc." id="rLandmark">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Upload Photos / Evidence</label>
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+              <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFileSelect(event)">
+              <div class="upload-icon">📷</div>
+              <div class="upload-text"><strong>Click to upload</strong> or drag & drop photos<br>JPG, PNG, GIF up to 10MB each</div>
+            </div>
+            <div class="preview-grid" id="previewGrid"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">AI-Suggested Solutions</label>
+            <div id="aiSuggestions" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius2);padding:14px;font-size:13px;color:var(--text2)">
+              Select a category above to get AI-powered solution suggestions for your problem type.
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:4px">
+            <button class="btn" onclick="getSuggestions()" style="flex:1;justify-content:center">🤖 Get AI Suggestions</button>
+            <button class="btn btn-primary" onclick="submitReport()" style="flex:1;justify-content:center">🚀 Submit Report</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MAP PAGE ═══ -->
+    <div class="page fade-in" id="page-map">
+      <div class="card-header" style="margin-bottom:16px">
+        <h2 style="font-family:var(--font-head);font-weight:800">Live Problem Map — Mardan</h2>
+        <div style="display:flex;gap:8px">
+          <span class="badge badge-emergency">● Emergency</span>
+          <span class="badge badge-pending">⏳ Pending</span>
+          <span class="badge badge-progress">🔧 In Progress</span>
+          <span class="badge badge-done">✅ Resolved</span>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="filter-chip active" onclick="filterMap('all',this)">All</div>
+        <div class="filter-chip" onclick="filterMap('road',this)">🛣️ Road</div>
+        <div class="filter-chip" onclick="filterMap('water',this)">💧 Water</div>
+        <div class="filter-chip" onclick="filterMap('garbage',this)">🗑️ Garbage</div>
+        <div class="filter-chip" onclick="filterMap('electric',this)">⚡ Electric</div>
+        <div class="filter-chip" onclick="filterMap('emergency',this)">🚨 Emergency</div>
+      </div>
+      <div id="map"></div>
+      <div class="grid grid-3" style="margin-top:16px">
+        <div class="card" style="padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">TOTAL ON MAP</div>
+          <div style="font-family:var(--font-head);font-size:24px;font-weight:800">247</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">HIGHEST PROBLEM AREA</div>
+          <div style="font-family:var(--font-head);font-size:16px;font-weight:700">City Center</div>
+        </div>
+        <div class="card" style="padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">LAST UPDATED</div>
+          <div style="font-family:var(--font-head);font-size:16px;font-weight:700" id="mapLastUpdated"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ LEADERBOARD PAGE ═══ -->
+    <div class="page fade-in" id="page-leaderboard">
+      <h2 style="font-family:var(--font-head);font-weight:800;margin-bottom:6px">Citizen Leaderboard</h2>
+      <p style="color:var(--text2);font-size:14px;margin-bottom:24px">Top contributors making Mardan better every day.</p>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🏆 Top Citizens</div><span style="font-size:12px;color:var(--text3)">All Time</span></div>
+          <div id="leaderboardList"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Your Progress</div></div>
+          <div style="text-align:center;padding:20px 0">
+            <div class="avatar" style="width:64px;height:64px;font-size:24px;margin:0 auto 12px" id="profileAvatar">AK</div>
+            <div style="font-family:var(--font-head);font-size:20px;font-weight:800" id="myName">Ahmad Khan</div>
+            <div class="points-badge" style="margin:8px auto;display:inline-flex">⭐ 340 Points</div>
+            <div style="font-size:13px;color:var(--text3);margin-top:8px">Rank #7 in Mardan</div>
+          </div>
+          <div class="sep"></div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>Reports Filed</span><span style="color:var(--text2)">8 / 20</span></div>
+              <div class="progress-bar"><div class="progress-fill blue" style="width:40%"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>Problems Verified</span><span style="color:var(--text2)">5 / 10</span></div>
+              <div class="progress-bar"><div class="progress-fill green" style="width:50%"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>Community Votes</span><span style="color:var(--text2)">23 / 50</span></div>
+              <div class="progress-bar"><div class="progress-fill amber" style="width:46%"></div></div>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px">Achievements</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span title="First Report" style="font-size:22px">🥇</span>
+            <span title="5 Reports" style="font-size:22px">📌</span>
+            <span title="Verified Citizen" style="font-size:22px">✅</span>
+            <span title="Community Helper" style="font-size:22px">🤝</span>
+            <span title="Locked" style="font-size:22px;opacity:0.3">🏅</span>
+            <span title="Locked" style="font-size:22px;opacity:0.3">🌟</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FEED PAGE ═══ -->
+    <div class="page fade-in" id="page-feed">
+      <h2 style="font-family:var(--font-head);font-weight:800;margin-bottom:6px">Activity Feed</h2>
+      <p style="color:var(--text2);font-size:14px;margin-bottom:24px">Real-time updates from citizens of Mardan</p>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Latest Activity</div><span class="badge badge-done">● Live</span></div>
+          <div id="fullFeed"></div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><div class="card-title">📢 Announcements</div></div>
+            <div style="display:flex;flex-direction:column;gap:10px" id="announcements"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">📊 Today's Summary</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="text-align:center;background:var(--bg3);border-radius:var(--radius2);padding:14px">
+                <div style="font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--red)">3</div>
+                <div style="font-size:11px;color:var(--text3)">New Reports</div>
+              </div>
+              <div style="text-align:center;background:var(--bg3);border-radius:var(--radius2);padding:14px">
+                <div style="font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--green)">2</div>
+                <div style="font-size:11px;color:var(--text3)">Resolved Today</div>
+              </div>
+              <div style="text-align:center;background:var(--bg3);border-radius:var(--radius2);padding:14px">
+                <div style="font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--accent2)">47</div>
+                <div style="font-size:11px;color:var(--text3)">Votes Cast</div>
+              </div>
+              <div style="text-align:center;background:var(--bg3);border-radius:var(--radius2);padding:14px">
+                <div style="font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--amber)">12</div>
+                <div style="font-size:11px;color:var(--text3)">Comments</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DONATIONS PAGE ═══ -->
+    <div class="page fade-in" id="page-donations">
+      <h2 style="font-family:var(--font-head);font-weight:800;margin-bottom:6px">Community Fund Tracker</h2>
+      <p style="color:var(--text2);font-size:14px;margin-bottom:24px">100% transparent tracking of community contributions</p>
+      <div class="grid grid-4" style="margin-bottom:20px">
+        <div class="stat-card green"><div class="stat-icon green">💰</div><div class="stat-num">₨2.4M</div><div class="stat-label">Total Raised</div></div>
+        <div class="stat-card blue"><div class="stat-icon blue">📊</div><div class="stat-num">₨1.8M</div><div class="stat-label">Deployed</div></div>
+        <div class="stat-card amber"><div class="stat-icon amber">⏳</div><div class="stat-num">₨600K</div><div class="stat-label">In Reserve</div></div>
+        <div class="stat-card blue"><div class="stat-icon blue">👥</div><div class="stat-num">312</div><div class="stat-label">Contributors</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Active Fund Campaigns</div></div>
+          <div id="donationCampaigns"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Fund Allocation</div></div>
+          <div style="position:relative;height:260px"><canvas id="donationChart" role="img" aria-label="Pie chart of fund allocation">Allocation breakdown.</canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PROFILE PAGE ═══ -->
+    <div class="page fade-in" id="page-profile">
+      <div style="max-width:680px">
+        <h2 style="font-family:var(--font-head);font-weight:800;margin-bottom:24px">My Profile</h2>
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px">
+            <div style="position:relative">
+              <div class="avatar" style="width:72px;height:72px;font-size:26px" id="bigAvatar">AK</div>
+              <div onclick="document.getElementById('avatarInput').click()" style="position:absolute;bottom:0;right:0;width:22px;height:22px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px">✏️</div>
+              <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="updateAvatar(event)">
+            </div>
+            <div>
+              <div style="font-family:var(--font-head);font-size:20px;font-weight:800" id="profileName">Ahmad Khan</div>
+              <div style="color:var(--text2);font-size:13px" id="profileEmail">demo@mardan.pk</div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <span class="badge badge-verified">✓ Verified Citizen</span>
+                <span class="points-badge">⭐ 340 pts</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">First Name</label><input type="text" class="form-input" value="Ahmad" id="pfFirst"></div>
+            <div class="form-group"><label class="form-label">Last Name</label><input type="text" class="form-input" value="Khan" id="pfLast"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" value="demo@mardan.pk" id="pfEmail"></div>
+            <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-input" value="+92 300 1234567"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Area</label>
+              <select class="form-select"><option selected>City Center</option><option>Katlang Road</option><option>Hoti</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">Role</label><input type="text" class="form-input" value="Active Citizen" readonly></div>
+          </div>
+          <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">My Reports</div></div>
+          <div id="myReports"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ADMIN PAGE ═══ -->
+    <div class="page fade-in" id="page-admin">
+      <h2 style="font-family:var(--font-head);font-weight:800;margin-bottom:6px">Admin Panel</h2>
+      <p style="color:var(--text2);font-size:14px;margin-bottom:20px">Manage all reports, users, and emergency alerts</p>
+      <div class="tabs">
+        <div class="tab active" onclick="switchAdminTab('reports',this)">📋 All Reports</div>
+        <div class="tab" onclick="switchAdminTab('users',this)">👥 Users</div>
+        <div class="tab" onclick="switchAdminTab('emergency',this)">🚨 Emergency Alerts</div>
+      </div>
+      <div id="adminTabContent"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- CHATBOT -->
+<div class="chatbot-container" id="chatbotContainer" style="display:none">
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-header">
+      <div class="chat-ai-avatar">🤖</div>
+      <div>
+        <div class="chat-title">Mardan AI Assistant</div>
+        <div class="chat-status">Online</div>
+      </div>
+      <div style="margin-left:auto;cursor:pointer;color:var(--text3)" onclick="toggleChat()">✕</div>
+    </div>
+    <div class="emergency-alert" id="emergencyAlert">
+      🚨 Emergency detected! Alerting authorities and admin. Stay calm. <strong>Emergency: 1122 | Police: 15</strong>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg bot">السلام علیکم! I'm the Mardan Help Portal AI. I can help you report issues, find information, or handle emergencies. How can I assist you today?</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="chat-send" onclick="sendChat()">→</button>
+    </div>
+  </div>
+  <button class="chatbot-bubble" onclick="toggleChat()">💬</button>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"></div>
+
+<!-- MODAL: Problem Detail -->
+<div class="modal-overlay" id="problemModal">
+  <div class="modal">
+    <div class="modal-close" onclick="closeModal('problemModal')">✕</div>
+    <div id="problemModalContent"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  DATA STORE
+// ═══════════════════════════════════════════
+const DB = {
+  user: {
+    name: 'Ahmad Khan', email: 'demo@mardan.pk',
+    avatar: 'AK', points: 340, role: 'Active Citizen'
+  },
+  problems: [
+    { id:1, title:'Large Pothole on Katlang Road', category:'Road', location:'Katlang Road', desc:'Deep 2-foot pothole causing accidents near the petrol pump. Three motorcycles damaged this week alone.', status:'pending', votes:42, reporter:'Bilal Ahmed', time:'2 hours ago', lat:34.1988, lng:72.0247, priority:'High', verified:true, images:[], comments:5, progress:0 },
+    { id:2, title:'Sewage Overflow Near Girls School', category:'Water', location:'City Center', desc:'Raw sewage overflowing onto the main road near Government Girls High School. Health hazard for students and residents.', status:'progress', votes:87, reporter:'Hina Gul', time:'5 hours ago', lat:34.2020, lng:72.0180, priority:'Emergency', verified:true, images:[], comments:12, progress:35 },
+    { id:3, title:'Illegal Garbage Dumping Behind Hospital', category:'Garbage', location:'Rustam', desc:'Large-scale illegal dumping of medical and household waste behind the DHQ Hospital. Burning waste daily.', status:'pending', votes:31, reporter:'Dr. Nasir Shah', time:'1 day ago', lat:34.1950, lng:72.0300, priority:'High', verified:false, images:[], comments:3, progress:0 },
+    { id:4, title:'Street Lights Out for 2 Months', category:'Electric', location:'Toru', desc:'Entire street dark for 2 months. Robberies have increased. Multiple complaints filed with PESCO but no action.', status:'pending', votes:65, reporter:'Zahoor Khan', time:'2 days ago', lat:34.2100, lng:72.0150, priority:'Medium', verified:true, images:[], comments:8, progress:0 },
+    { id:5, title:'Water Supply Disrupted in Shergarh', category:'Water', location:'Shergarh', desc:'No water supply for 5 days. Over 200 families affected. TMA was informed but no response.', status:'progress', votes:120, reporter:'Rahila Bibi', time:'3 days ago', lat:34.1900, lng:72.0400, priority:'Emergency', verified:true, images:[], comments:19, progress:55 },
+    { id:6, title:'Broken Bridge on Takht Bhai Road', category:'Road', location:'Takht Bhai', desc:'Side railings completely broken. Kids risk falling. School bus nearly fell off yesterday.', status:'done', votes:93, reporter:'Imran Wali', time:'1 week ago', lat:34.2200, lng:72.0100, priority:'High', verified:true, images:[], comments:22, progress:100 },
+    { id:7, title:'Open Drain Near Lundkhwar Bazaar', category:'Water', location:'Lundkhwar', desc:'Open drain flooded due to rains. Market completely shut. Traders losing thousands daily.', status:'pending', votes:55, reporter:'Salman Qadir', time:'1 day ago', lat:34.1850, lng:72.0350, priority:'High', verified:false, images:[], comments:7, progress:0 },
+    { id:8, title:'No Gas Supply — Hoti Area', category:'Electric', location:'Hoti', desc:'Gas supply cut for 12 days. Winter approaching, families struggling to cook. SNGPL not responding.', status:'pending', votes:78, reporter:'Nasreen Akhtar', time:'4 days ago', lat:34.1970, lng:72.0280, priority:'Medium', verified:true, images:[], comments:15, progress:0 },
+    { id:9, title:'Road Construction Abandoned Midway', category:'Road', location:'University Road', desc:'Road dug up 2 months ago but contractors left. Massive traffic jams. Businesses suffering.', status:'progress', votes:103, reporter:'Prof. Khalid', time:'5 days ago', lat:34.2060, lng:72.0220, priority:'High', verified:true, images:[], comments:28, progress:20 },
+    { id:10, title:'Dengue Outbreak Near Pir Qila', category:'Health', location:'Pir Qila', desc:'Multiple dengue cases in the area. Standing water everywhere. Health dept must spray immediately.', status:'done', votes:145, reporter:'Community Leader', time:'2 weeks ago', lat:34.2150, lng:72.0050, priority:'Emergency', verified:true, images:[], comments:34, progress:100 },
+    { id:11, title:'Dog Menace on Gulshan Chowk', category:'Health', location:'City Center', desc:'Pack of stray aggressive dogs attacking pedestrians and school children daily near the chowk.', status:'pending', votes:38, reporter:'Asad Rehman', time:'6 hours ago', lat:34.2010, lng:72.0190, priority:'Medium', verified:false, images:[], comments:4, progress:0 },
+    { id:12, title:'School Boundary Wall Collapsed', category:'Road', location:'Katlang Road', desc:'Government school boundary wall fell on road. Children at risk of accident. Must be fixed immediately.', status:'pending', votes:47, reporter:'Parent Committee', time:'8 hours ago', lat:34.1995, lng:72.0255, priority:'High', verified:true, images:[], comments:9, progress:0 },
+  ],
+  activities: [
+    { type:'report', text:'<strong>Bilal Ahmed</strong> reported a new road issue in Katlang Road', time:'2 min ago', color:'var(--red)' },
+    { type:'vote', text:'<strong>Hina Gul</strong> voted on "Sewage Overflow Near Girls School"', time:'7 min ago', color:'var(--accent)' },
+    { type:'update', text:'Admin marked "Dengue Outbreak" as <strong>Resolved</strong>', time:'15 min ago', color:'var(--green)' },
+    { type:'comment', text:'<strong>Dr. Nasir</strong> commented on Garbage Dumping report', time:'22 min ago', color:'var(--amber)' },
+    { type:'join', text:'<strong>Fatima Khan</strong> joined the portal from Toru area', time:'1 hour ago', color:'var(--green)' },
+    { type:'vote', text:'<strong>Zahoor Khan</strong> voted on Street Lights report', time:'1 hour ago', color:'var(--accent)' },
+    { type:'report', text:'<strong>Asad Rehman</strong> reported Dog Menace at Gulshan Chowk', time:'3 hours ago', color:'var(--red)' },
+    { type:'update', text:'Admin updated progress on "Water Supply Disrupted" to 55%', time:'5 hours ago', color:'var(--blue)' },
+    { type:'point', text:'<strong>Rahila Bibi</strong> earned 50 points for most-voted report', time:'6 hours ago', color:'var(--amber)' },
+    { type:'verify', text:'<strong>Imran Wali</strong> got Verified Citizen badge', time:'1 day ago', color:'var(--accent)' },
+  ],
+  leaderboard: [
+    { name:'Rahila Bibi', points:820, reports:15, area:'Shergarh', initials:'RB' },
+    { name:'Imran Wali', points:740, reports:12, area:'Takht Bhai', initials:'IW' },
+    { name:'Prof. Khalid', points:650, reports:11, area:'University Road', initials:'PK' },
+    { name:'Community Leader', points:590, reports:10, area:'Pir Qila', initials:'CL' },
+    { name:'Dr. Nasir Shah', points:480, reports:8, area:'Rustam', initials:'NS' },
+    { name:'Zahoor Khan', points:420, reports:7, area:'Toru', initials:'ZK' },
+    { name:'Ahmad Khan', points:340, reports:8, area:'City Center', initials:'AK' },
+    { name:'Hina Gul', points:290, reports:6, area:'City Center', initials:'HG' },
+  ],
+  donations: [
+    { title:'Katlang Road Repair Fund', raised:450000, target:1000000, backers:87, status:'Active' },
+    { title:'Shergarh Water Pipeline', raised:280000, target:500000, backers:54, status:'Active' },
+    { title:'Street Light Restoration', raised:180000, target:250000, backers:43, status:'Active' },
+    { title:'School Boundary Wall Fix', raised:95000, target:120000, backers:28, status:'Active' },
+  ],
+  announcements: [
+    { icon:'📢', text:'District administration response team visiting Katlang Road this Friday for road inspection.', time:'Today' },
+    { icon:'✅', text:'Dengue spray campaign successfully completed in Pir Qila. 0 new cases in 5 days.', time:'Yesterday' },
+    { icon:'🤝', text:'MARDAN HELP PORTAL has partnered with TMA Mardan for faster issue resolution.', time:'3 days ago' },
+    { icon:'🏆', text:'Mardan Help Portal reaches 1,000 registered citizens! Thanks to the community.', time:'1 week ago' },
+  ]
+};
+
+let currentFilter = 'All';
+let mapInstance = null;
+let mapMarkers = [];
+let sidebarCollapsed = false;
+
+// ═══════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════
+function switchAuthTab(tab) {
+  document.getElementById('loginTab').classList.toggle('active', tab==='login');
+  document.getElementById('signupTab').classList.toggle('active', tab==='signup');
+  document.getElementById('loginForm').style.display = tab==='login'?'block':'none';
+  document.getElementById('signupForm').style.display = tab==='signup'?'block':'none';
+}
+function doLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const pass = document.getElementById('loginPass').value;
+  if (!email || !pass) { showNotif('Please fill in all fields','error'); return; }
+  const token = btoa(email + ':' + Date.now());
+  localStorage.setItem('mhp_token', token);
+  localStorage.setItem('mhp_user', JSON.stringify(DB.user));
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'flex';
+  document.getElementById('chatbotContainer').style.display = 'block';
+  initApp();
+  showNotif('Welcome back, Ahmad Khan! 👋','success');
+}
+function doSignup() {
+  const first = document.getElementById('signupFirst').value;
+  const last = document.getElementById('signupLast').value;
+  const email = document.getElementById('signupEmail').value;
+  const pass = document.getElementById('signupPass').value;
+  if (!first||!last||!email||!pass) { showNotif('Please fill in all fields','error'); return; }
+  if (pass.length < 8) { showNotif('Password must be 8+ characters','error'); return; }
+  DB.user.name = first + ' ' + last;
+  DB.user.email = email;
+  DB.user.avatar = (first[0]+last[0]).toUpperCase();
+  doLogin();
+}
+function checkAuth() {
+  const token = localStorage.getItem('mhp_token');
+  if (token) {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+    document.getElementById('chatbotContainer').style.display = 'block';
+    initApp();
+  }
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const p = document.getElementById('page-'+page);
+  if (p) { p.classList.add('active'); p.classList.add('fade-in'); }
+  const navMap = { dashboard:'Dashboard', problems:'All Problems', report:'Report an Issue', map:'Live Map — Mardan', leaderboard:'Leaderboard', feed:'Activity Feed', donations:'Community Fund', profile:'My Profile', admin:'Admin Panel' };
+  document.getElementById('topbarTitle').textContent = navMap[page] || page;
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) n.classList.add('active');
+  });
+  if (page === 'map') setTimeout(initMap, 100);
+  if (page === 'admin') renderAdminReports();
+  window.scrollTo(0,0);
+}
+function toggleSidebar() {
+  sidebarCollapsed = !sidebarCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+  document.getElementById('mainContent').classList.toggle('expanded', sidebarCollapsed);
+}
+function toggleTheme() {
+  const isDark = !document.body.hasAttribute('data-theme');
+  document.body.setAttribute('data-theme', isDark ? 'light' : '');
+  document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
+  if (!isDark) document.body.removeAttribute('data-theme');
+}
+
+// ═══════════════════════════════════════════
+//  NOTIFICATIONS
+// ═══════════════════════════════════════════
+function showNotif(msg, type='info') {
+  const n = document.getElementById('notif');
+  const icons = { success:'✅', error:'❌', info:'ℹ️', warn:'⚠️' };
+  n.className = `notif ${type}`;
+  n.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 3500);
+}
+
+// ═══════════════════════════════════════════
+//  CHARTS
+// ═══════════════════════════════════════════
+function initCharts() {
+  const catCtx = document.getElementById('catChart');
+  if (catCtx && !catCtx._chart) {
+    catCtx._chart = new Chart(catCtx, {
+      type:'bar',
+      data:{
+        labels:['Roads','Water','Garbage','Electric','Health','Other'],
+        datasets:[{ label:'Reports', data:[68,52,45,38,24,20],
+          backgroundColor:['#6c63ff','#22d3a0','#ffa94d','#4db8ff','#ff5a5a','#888'],
+          borderRadius:6, borderSkipped:false }]
+      },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } },
+        scales:{ x:{ grid:{ display:false }, ticks:{ color:'#9090a8' } }, y:{ grid:{ color:'rgba(255,255,255,0.05)' }, ticks:{ color:'#9090a8' } } } }
+    });
+  }
+  const trendCtx = document.getElementById('trendChart');
+  if (trendCtx && !trendCtx._chart) {
+    trendCtx._chart = new Chart(trendCtx, {
+      type:'line',
+      data:{
+        labels:['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb'],
+        datasets:[
+          { label:'Reports', data:[18,24,31,28,42,38,55,61],
+            borderColor:'#6c63ff', backgroundColor:'rgba(108,99,255,0.08)',
+            tension:0.4, fill:true, pointBackgroundColor:'#6c63ff', pointRadius:4 },
+          { label:'Resolved', data:[8,12,18,15,25,22,32,41],
+            borderColor:'#22d3a0', backgroundColor:'rgba(34,211,160,0.05)',
+            tension:0.4, fill:true, borderDash:[4,3], pointBackgroundColor:'#22d3a0', pointRadius:3 }
+        ]
+      },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false } },
+        scales:{ x:{ grid:{ display:false }, ticks:{ color:'#9090a8' } }, y:{ grid:{ color:'rgba(255,255,255,0.05)' }, ticks:{ color:'#9090a8' } } } }
+    });
+  }
+  const donCtx = document.getElementById('donationChart');
+  if (donCtx && !donCtx._chart) {
+    donCtx._chart = new Chart(donCtx, {
+      type:'doughnut',
+      data:{
+        labels:['Roads (37%)','Water (21%)','Electric (17%)','Health (15%)','Other (10%)'],
+        datasets:[{ data:[37,21,17,15,10],
+          backgroundColor:['#6c63ff','#22d3a0','#4db8ff','#ff5a5a','#ffa94d'],
+          borderWidth:2, borderColor:'transparent', hoverOffset:8 }]
+      },
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'65%',
+        plugins:{ legend:{ position:'bottom', labels:{ color:'#9090a8', font:{size:11}, padding:12 } } } }
+    });
+  }
+}
+
+// ═══════════════════════════════════════════
+//  MAP
+// ═══════════════════════════════════════════
+function initMap() {
+  if (mapInstance) { mapInstance.invalidateSize(); return; }
+  mapInstance = L.map('map').setView([34.1988, 72.0247], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap', maxZoom:19
+  }).addTo(mapInstance);
+  addMapMarkers('all');
+}
+function getMarkerColor(status) {
+  const c = { pending:'#ffa94d', progress:'#4db8ff', done:'#22d3a0', emergency:'#ff5a5a' };
+  return c[status] || c.pending;
+}
+function addMapMarkers(filter) {
+  mapMarkers.forEach(m => mapInstance.removeLayer(m));
+  mapMarkers = [];
+  DB.problems.forEach(p => {
+    if (filter !== 'all' && p.category.toLowerCase() !== filter && p.priority.toLowerCase() !== filter) return;
+    const color = p.priority === 'Emergency' ? '#ff5a5a' : getMarkerColor(p.status);
+    const icon = L.divIcon({
+      className:'',
+      html:`<div style="width:28px;height:28px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;">${p.category==='Road'?'🛣️':p.category==='Water'?'💧':p.category==='Garbage'?'🗑️':p.category==='Electric'?'⚡':p.category==='Health'?'🏥':'📌'}</div>`,
+      iconSize:[28,28], iconAnchor:[14,14]
+    });
+    const marker = L.marker([p.lat, p.lng], {icon}).addTo(mapInstance);
+    marker.bindPopup(`<div style="min-width:180px"><strong style="font-size:13px">${p.title}</strong><br><small style="color:#888">${p.location} • ${p.time}</small><br><span style="font-size:11px;background:${color};color:#fff;padding:2px 8px;border-radius:10px;margin-top:4px;display:inline-block">${p.status}</span><br><small>${p.votes} votes</small></div>`);
+    mapMarkers.push(marker);
+  });
+}
+function filterMap(type, el) {
+  document.querySelectorAll('#page-map .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  addMapMarkers(type);
+}
+
+// ═══════════════════════════════════════════
+//  PROBLEMS
+// ═══════════════════════════════════════════
+function renderProblems() {
+  const grid = document.getElementById('problemsGrid');
+  const search = (document.getElementById('searchInput')||{}).value||'';
+  const sort = (document.getElementById('sortSelect')||{}).value||'';
+  let list = [...DB.problems];
+  if (currentFilter !== 'All') {
+    if (['Pending','Done','Progress'].includes(currentFilter)) {
+      list = list.filter(p => p.status.toLowerCase().includes(currentFilter.toLowerCase().replace('done','done').replace('pending','pending')));
+    } else {
+      list = list.filter(p => p.category === currentFilter || p.priority === currentFilter);
+    }
+  }
+  if (search) list = list.filter(p => p.title.toLowerCase().includes(search.toLowerCase()) || p.desc.toLowerCase().includes(search.toLowerCase()) || p.location.toLowerCase().includes(search.toLowerCase()));
+  if (sort.includes('Votes')) list.sort((a,b) => b.votes - a.votes);
+  if (sort.includes('Pending')) list.sort((a,b) => (a.status==='pending'?0:1)-(b.status==='pending'?0:1));
+  grid.innerHTML = list.map(p => problemCard(p)).join('');
+  if (!list.length) grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No problems found matching your filters</p></div>';
+}
+function problemCard(p) {
+  const statusMap = { pending:'badge-pending', progress:'badge-progress', done:'badge-done' };
+  const statusLabel = { pending:'Pending', progress:'In Progress', done:'Resolved' };
+  const priorityColor = { Low:'var(--text3)', Medium:'var(--amber)', High:'var(--red)', Emergency:'var(--red)' };
+  return `<div class="problem-card" onclick="openProblem(${p.id})">
+    <div class="problem-meta">
+      <span class="badge ${statusMap[p.status]}">${statusLabel[p.status]}</span>
+      <span class="cat-tag">${p.category}</span>
+      <span style="font-size:11px;color:${priorityColor[p.priority]}">${p.priority==='Emergency'?'🚨':p.priority==='High'?'🔴':''}${p.priority}</span>
+      ${p.verified?'<span class="verified" title="Verified">✓</span>':''}
+    </div>
+    <div class="problem-title">${p.title}</div>
+    <div class="problem-desc">${p.desc.substring(0,110)}...</div>
+    ${p.status==='progress'?`<div style="margin-bottom:10px"><div class="progress-bar"><div class="progress-fill blue" style="width:${p.progress}%"></div></div><div style="font-size:11px;color:var(--text3);margin-top:4px">${p.progress}% complete</div></div>`:''}
+    <div class="problem-footer">
+      <div class="problem-stats">
+        <span class="pstat">📍 ${p.location}</span>
+        <span class="pstat">💬 ${p.comments}</span>
+        <span class="pstat">🕐 ${p.time}</span>
+      </div>
+      <div class="vote-btn ${p._voted?'voted':''}" onclick="event.stopPropagation();vote(${p.id},this)">▲ ${p.votes}</div>
+    </div>
+  </div>`;
+}
+function filterProblems() { renderProblems(); }
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderProblems();
+}
+function vote(id, el) {
+  const p = DB.problems.find(x=>x.id===id);
+  if (!p) return;
+  if (p._voted) { p.votes--; p._voted=false; el.classList.remove('voted'); el.textContent='▲ '+p.votes; showNotif('Vote removed','info'); }
+  else { p.votes++; p._voted=true; el.classList.add('voted'); el.textContent='▲ '+p.votes; showNotif('+10 points for voting!','success'); DB.user.points+=10; }
+  renderProblems();
+}
+function openProblem(id) {
+  const p = DB.problems.find(x=>x.id===id);
+  if (!p) return;
+  const statusMap = { pending:'badge-pending', progress:'badge-progress', done:'badge-done' };
+  const statusLabel = { pending:'Pending', progress:'In Progress', done:'Resolved' };
+  document.getElementById('problemModalContent').innerHTML = `
+    <div class="badge ${statusMap[p.status]}" style="margin-bottom:12px">${statusLabel[p.status]}</div>
+    <div class="modal-title">${p.title}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <span class="cat-tag">${p.category}</span>
+      <span class="cat-tag">📍 ${p.location}</span>
+      <span class="cat-tag">👤 ${p.reporter}</span>
+      <span class="cat-tag">🕐 ${p.time}</span>
+      ${p.verified?'<span class="badge badge-verified">✓ Verified</span>':''}
+    </div>
+    <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:16px">${p.desc}</p>
+    ${p.status==='progress'?`<div style="margin-bottom:16px"><div style="font-size:12px;margin-bottom:6px">Progress: <strong>${p.progress}%</strong></div><div class="progress-bar" style="height:10px"><div class="progress-fill blue" style="width:${p.progress}%"></div></div></div>`:''}
+    <div class="sep"></div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:12px">Timeline</div>
+    <div class="timeline">
+      <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">${p.time}</div><div class="tl-text">Report submitted by ${p.reporter}</div></div>
+      ${p.status!=='pending'?`<div class="tl-item"><div class="tl-dot progress"></div><div class="tl-date">Recently</div><div class="tl-text">Issue accepted by TMA Mardan, team assigned</div></div>`:''}
+      ${p.status==='done'?`<div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">Completed</div><div class="tl-text">Issue resolved and verified by admin</div></div>`:`<div class="tl-item"><div class="tl-dot pending"></div><div class="tl-date">Pending</div><div class="tl-text">Awaiting resolution...</div></div>`}
+    </div>
+    <div class="sep"></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="vote(${p.id},this);closeModal('problemModal')">▲ Upvote (${p.votes})</button>
+      <button class="btn btn-success" style="flex:1;justify-content:center">Share</button>
+    </div>`;
+  document.getElementById('problemModal').classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════════
+//  REPORT SUBMISSION
+// ═══════════════════════════════════════════
+const uploadedFiles = [];
+function handleFileSelect(e) {
+  [...e.target.files].forEach(f => addPreview(f));
+}
+function handleDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
+function handleDrop(e) { e.preventDefault(); document.getElementById('uploadZone').classList.remove('dragover'); [...e.dataTransfer.files].forEach(f => addPreview(f)); }
+function addPreview(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.createElement('img');
+    img.src = ev.target.result; img.className = 'preview-img';
+    document.getElementById('previewGrid').appendChild(img);
+  };
+  reader.readAsDataURL(file);
+}
+function getSuggestions() {
+  const cat = document.getElementById('rCategory').value;
+  const suggestions = {
+    'Road Damage': '🛣️ <strong>Suggested Actions:</strong> Contact TMA Mardan at 0937-871234. Take geo-tagged photos. Share with city WhatsApp groups. Coordinate with neighboring residents for a joint complaint for faster action.',
+    'Garbage Problem': '🗑️ <strong>Suggested Actions:</strong> Report to Municipal Corporation. Organize community cleanup while awaiting response. Request placement of waste bins through LG department.',
+    'Water Issue': '💧 <strong>Suggested Actions:</strong> Contact WASA/TMA water department. Document affected households. Escalate to district administration if unresolved in 48 hours.',
+    'Electricity Problem': '⚡ <strong>Suggested Actions:</strong> File complaint with PESCO (0937-870000). Note reference number. Escalate to PESCO Mardan circle if not resolved in 72 hours.',
+    'Health & Sanitation': '🏥 <strong>Suggested Actions:</strong> Contact DHO Mardan. Report to District Health Authority. If urgent, contact Emergency Health Services 1122.',
+    'Emergency': '🚨 <strong>Suggested Actions:</strong> Call 1122 (Rescue), 15 (Police), 115 (Ambulance) immediately. Use the Emergency Chat button below. This will alert the admin instantly.',
+  };
+  const el = document.getElementById('aiSuggestions');
+  el.innerHTML = suggestions[cat] || '🤖 Fill in the category to get AI-powered suggestions tailored to Mardan\'s resources and local authorities.';
+  if (cat === 'Emergency') showNotif('Emergency category selected! Use the chat button for immediate help.','warn');
+}
+function submitReport() {
+  const cat = document.getElementById('rCategory').value;
+  const title = document.getElementById('rTitle').value;
+  const desc = document.getElementById('rDesc').value;
+  const loc = document.getElementById('rLocation').value;
+  if (!cat||!title||!desc) { showNotif('Please fill in Category, Title and Description','error'); return; }
+  const newP = {
+    id: DB.problems.length + 1, title, category: cat.split(' ')[0], location: loc, desc,
+    status:'pending', votes:0, reporter: DB.user.name, time:'Just now',
+    lat: 34.1988 + (Math.random()-0.5)*0.04, lng: 72.0247 + (Math.random()-0.5)*0.04,
+    priority: document.getElementById('rPriority').value, verified:false, images:[], comments:0, progress:0
+  };
+  DB.problems.unshift(newP);
+  DB.user.points += 50;
+  document.getElementById('statTotal').textContent = DB.problems.length;
+  document.getElementById('statPending').textContent = DB.problems.filter(p=>p.status==='pending').length;
+  document.getElementById('pendingBadge').textContent = DB.problems.filter(p=>p.status==='pending').length;
+  DB.activities.unshift({ type:'report', text:`<strong>${DB.user.name}</strong> reported a new ${cat} issue in ${loc}`, time:'Just now', color:'var(--red)' });
+  document.getElementById('rTitle').value=''; document.getElementById('rDesc').value='';
+  document.getElementById('previewGrid').innerHTML='';
+  showNotif('✅ Report submitted! +50 points earned. Community notified!','success');
+  setTimeout(() => showPage('problems'), 1500);
+}
+
+// ═══════════════════════════════════════════
+//  LEADERBOARD
+// ═══════════════════════════════════════════
+function renderLeaderboard() {
+  const max = DB.leaderboard[0].points;
+  document.getElementById('leaderboardList').innerHTML = DB.leaderboard.map((u,i) => `
+    <div class="lb-item">
+      <div class="lb-rank ${['r1','r2','r3','r4'][Math.min(i,3)]}">${i+1}</div>
+      <div class="avatar" style="width:32px;height:32px;font-size:12px">${u.initials}</div>
+      <div class="lb-info">
+        <div class="lb-name">${u.name} ${u.name===DB.user.name?'<span style="color:var(--accent2);font-size:10px">(You)</span>':''}</div>
+        <div class="lb-contrib">${u.reports} reports • ${u.area}</div>
+        <div class="lb-bar"><div class="lb-bar-fill" style="width:${Math.round(u.points/max*100)}%"></div></div>
+      </div>
+      <div class="lb-points">${u.points}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+//  FEED
+// ═══════════════════════════════════════════
+function renderFeed(containerId) {
+  const html = DB.activities.map(a => `
+    <div class="feed-item">
+      <div class="feed-dot" style="background:${a.color}"></div>
+      <div><div class="feed-text">${a.text}</div><div class="feed-time">${a.time}</div></div>
+    </div>`).join('');
+  if (document.getElementById(containerId)) document.getElementById(containerId).innerHTML = html;
+}
+function renderAnnouncements() {
+  if (!document.getElementById('announcements')) return;
+  document.getElementById('announcements').innerHTML = DB.announcements.map(a => `
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--bg3);border-radius:var(--radius2)">
+      <span style="font-size:18px">${a.icon}</span>
+      <div><div style="font-size:13px;line-height:1.5">${a.text}</div><div style="font-size:11px;color:var(--text3);margin-top:3px">${a.time}</div></div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+//  DONATIONS
+// ═══════════════════════════════════════════
+function renderDonations() {
+  if (!document.getElementById('donationCampaigns')) return;
+  document.getElementById('donationCampaigns').innerHTML = DB.donations.map(d => {
+    const pct = Math.round(d.raised/d.target*100);
+    return `<div class="donation-bar">
+      <div class="donation-header">
+        <div>
+          <div class="donation-title">${d.title}</div>
+          <div class="donation-target">Goal: ₨${(d.target/1000).toFixed(0)}K • ${d.backers} backers</div>
+        </div>
+        <div class="donation-amount">₨${(d.raised/1000).toFixed(0)}K</div>
+      </div>
+      <div class="progress-bar" style="height:8px;margin-bottom:4px"><div class="progress-fill green" style="width:${pct}%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)"><span>${pct}% funded</span><span>${d.status}</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+//  PROFILE
+// ═══════════════════════════════════════════
+function saveProfile() {
+  const first = document.getElementById('pfFirst').value;
+  const last = document.getElementById('pfLast').value;
+  DB.user.name = first + ' ' + last;
+  DB.user.email = document.getElementById('pfEmail').value;
+  DB.user.avatar = (first[0]+last[0]).toUpperCase();
+  updateUserUI();
+  showNotif('Profile saved!','success');
+}
+function updateAvatar(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    ['bigAvatar','sidebarAvatar','profileAvatar'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.style.backgroundImage=`url(${ev.target.result})`; el.style.backgroundSize='cover'; el.textContent=''; }
+    });
+    showNotif('Profile photo updated!','success');
+  };
+  reader.readAsDataURL(file);
+}
+function updateUserUI() {
+  const initials = DB.user.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  ['sidebarAvatar','bigAvatar','profileAvatar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.style.backgroundImage) el.textContent = initials;
+  });
+  ['sidebarName','profileName','myName'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = DB.user.name;
+  });
+  const pe = document.getElementById('profileEmail');
+  if (pe) pe.textContent = DB.user.email;
+}
+function renderMyReports() {
+  const el = document.getElementById('myReports');
+  if (!el) return;
+  const mine = DB.problems.filter((_,i) => i < 3);
+  el.innerHTML = mine.map(p => `<div style="padding:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+    <div><div style="font-size:13px;font-weight:600">${p.title}</div><div style="font-size:11px;color:var(--text3)">${p.location} • ${p.time}</div></div>
+    <span class="badge badge-${p.status==='done'?'done':p.status==='progress'?'progress':'pending'}">${p.status}</span>
+  </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+//  RECENT PROBLEMS (DASHBOARD)
+// ═══════════════════════════════════════════
+function renderRecentProblems() {
+  const el = document.getElementById('recentProblems');
+  if (!el) return;
+  el.innerHTML = DB.problems.slice(0,4).map(p => `
+    <div style="padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openProblem(${p.id})">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span class="badge badge-${p.status==='done'?'done':p.status==='progress'?'progress':'pending'}" style="font-size:10px">${p.status}</span>
+        <span style="font-size:11px;color:var(--text3)">${p.category}</span>
+      </div>
+      <div style="font-size:13px;font-weight:600">${p.title}</div>
+      <div style="font-size:11px;color:var(--text3)">📍 ${p.location} • ▲ ${p.votes}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN PANEL
+// ═══════════════════════════════════════════
+function switchAdminTab(tab, el) {
+  document.querySelectorAll('#page-admin .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if (tab==='reports') renderAdminReports();
+  else if (tab==='users') renderAdminUsers();
+  else if (tab==='emergency') renderAdminEmergency();
+}
+function renderAdminReports() {
+  document.getElementById('adminTabContent').innerHTML = `
+    <div class="card">
+      <table class="admin-table">
+        <thead><tr><th>#</th><th>Title</th><th>Category</th><th>Location</th><th>Reporter</th><th>Status</th><th>Votes</th><th>Action</th></tr></thead>
+        <tbody>${DB.problems.map(p=>`<tr>
+          <td style="color:var(--text3)">${p.id}</td>
+          <td><span style="font-weight:600;font-size:13px">${p.title.substring(0,40)}...</span></td>
+          <td><span class="cat-tag">${p.category}</span></td>
+          <td style="color:var(--text2)">${p.location}</td>
+          <td style="color:var(--text2)">${p.reporter}</td>
+          <td><span class="badge badge-${p.status==='done'?'done':p.status==='progress'?'progress':'pending'}">${p.status}</span></td>
+          <td style="font-weight:600">${p.votes}</td>
+          <td><select onchange="updateStatus(${p.id},this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;color:var(--text);cursor:pointer">
+            <option ${p.status==='pending'?'selected':''}>pending</option>
+            <option ${p.status==='progress'?'selected':''}>progress</option>
+            <option ${p.status==='done'?'selected':''}>done</option>
+          </select></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+function renderAdminUsers() {
+  const users = [
+    { name:'Ahmad Khan', email:'demo@mardan.pk', area:'City Center', reports:8, points:340, joined:'Jan 2025' },
+    { name:'Rahila Bibi', email:'rahila@mail.com', area:'Shergarh', reports:15, points:820, joined:'Dec 2024' },
+    { name:'Imran Wali', email:'imran@mail.com', area:'Takht Bhai', reports:12, points:740, joined:'Nov 2024' },
+  ];
+  document.getElementById('adminTabContent').innerHTML = `
+    <div class="card">
+      <table class="admin-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Area</th><th>Reports</th><th>Points</th><th>Joined</th><th>Action</th></tr></thead>
+        <tbody>${users.map(u=>`<tr>
+          <td><strong>${u.name}</strong></td><td style="color:var(--text2)">${u.email}</td>
+          <td>${u.area}</td><td>${u.reports}</td>
+          <td><span class="points-badge">⭐ ${u.points}</span></td>
+          <td style="color:var(--text3)">${u.joined}</td>
+          <td><button class="btn" style="padding:4px 10px;font-size:11px" onclick="showNotif('User verified!','success')">Verify</button></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+function renderAdminEmergency() {
+  const alerts = [
+    { user:'Hina Gul', msg:'Fire in the market near Katcheri road!', time:'10 min ago', location:'City Center', resolved:false },
+    { user:'Bilal Ahmed', msg:'Major accident on Katlang Road near Total petrol pump', time:'1 hour ago', location:'Katlang Road', resolved:true },
+    { user:'Unknown', msg:'HELP! flood water entering homes in low area', time:'3 hours ago', location:'Rustam', resolved:false },
+  ];
+  document.getElementById('adminTabContent').innerHTML = `<div class="card">
+    ${alerts.map(a=>`<div style="border:1px solid ${a.resolved?'var(--border)':'var(--red)'};border-radius:var(--radius2);padding:14px;margin-bottom:10px;background:${a.resolved?'var(--bg3)':'var(--red2)'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <strong style="font-size:14px">${a.resolved?'':'🚨 '} ${a.user}</strong>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:var(--text3)">${a.time}</span>
+          ${a.resolved?'<span class="badge badge-done">Resolved</span>':'<button class="btn btn-success" style="padding:4px 10px;font-size:11px" onclick="showNotif(\'Alert marked resolved\',\'success\')">Mark Resolved</button>'}
+        </div>
+      </div>
+      <div style="font-size:13px;margin-bottom:4px">"${a.msg}"</div>
+      <div style="font-size:11px;color:var(--text3)">📍 ${a.location}</div>
+    </div>`).join('')}
+  </div>`;
+}
+function updateStatus(id, status) {
+  const p = DB.problems.find(x=>x.id===id);
+  if (p) { p.status = status; if(status==='done')p.progress=100; if(status==='progress'&&p.progress===0)p.progress=30; }
+  showNotif(`Status updated to: ${status}`,'success');
+  renderProblems();
+}
+
+// ═══════════════════════════════════════════
+//  CHATBOT (AI-POWERED)
+// ═══════════════════════════════════════════
+let chatOpen = false;
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chatWindow').classList.toggle('open', chatOpen);
+}
+const EMERGENCY_KEYWORDS = ['help','emergency','fire','flood','accident','attack','crime','danger','urgent','dying','hurt','injured','explosion','gas leak','robbery','ambulance','police'];
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  appendMsg(msg, 'user');
+  input.value = '';
+  const isEmergency = EMERGENCY_KEYWORDS.some(k => msg.toLowerCase().includes(k));
+  if (isEmergency) {
+    document.getElementById('emergencyAlert').classList.add('show');
+    appendMsg('🚨 EMERGENCY DETECTED! Alerting authorities. Please call: 1122 (Rescue) or 15 (Police). Stay calm, help is coming.', 'bot emergency');
+    showNotif('Emergency detected! Authorities alerted.','error');
+    setTimeout(() => document.getElementById('emergencyAlert').classList.remove('show'), 8000);
+    return;
+  }
+  appendMsg('...', 'bot', 'typingMsg');
+  try {
+    const systemPrompt = `You are the Mardan Help Portal AI Assistant for Mardan city in Khyber Pakhtunkhwa, Pakistan. You help citizens report problems, find local government contacts, and give advice about community issues. Local emergency contacts: 1122 (Rescue), 15 (Police), 115 (Ambulance), TMA Mardan: 0937-871234, PESCO: 0937-870000, DHO Mardan: 0937-872000. Be concise (2-3 sentences). Respond in a mix of English and Urdu if appropriate. Always be helpful and encouraging.`;
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:300,
+        system: systemPrompt,
+        messages:[{role:'user', content: msg}] })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'I apologize, I could not process that. Please try again.';
+    const typing = document.getElementById('typingMsg');
+    if (typing) typing.remove();
+    appendMsg(reply, 'bot');
+  } catch(e) {
+    const typing = document.getElementById('typingMsg');
+    if (typing) typing.remove();
+    appendMsg('I am having trouble connecting. For emergencies: 1122 (Rescue), 15 (Police), 115 (Ambulance). For TMA: 0937-871234', 'bot');
+  }
+}
+function appendMsg(text, cls, id) {
+  const div = document.createElement('div');
+  div.className = `chat-msg ${cls}`;
+  div.textContent = text;
+  if (id) div.id = id;
+  const msgs = document.getElementById('chatMessages');
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ═══════════════════════════════════════════
+//  MISC
+// ═══════════════════════════════════════════
+function updateMapTime() {
+  const el = document.getElementById('mapLastUpdated');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+function initApp() {
+  updateUserUI();
+  renderProblems();
+  renderLeaderboard();
+  renderFeed('activityFeedSmall');
+  renderFeed('fullFeed');
+  renderRecentProblems();
+  renderAnnouncements();
+  renderDonations();
+  renderMyReports();
+  updateMapTime();
+  setInterval(updateMapTime, 60000);
+  setTimeout(initCharts, 300);
+  // Live activity simulation
+  setInterval(() => {
+    const names = ['Fatima K.','Usman A.','Sara M.','Ali R.','Zara B.'];
+    const actions = ['reported a new issue','voted on a report','earned 20 points','joined the portal','commented on an issue'];
+    const colors = ['var(--red)','var(--accent)','var(--amber)','var(--green)','var(--blue)'];
+    const r = Math.floor(Math.random()*names.length);
+    DB.activities.unshift({ type:'live', text:`<strong>${names[r]}</strong> ${actions[r]}`, time:'Just now', color:colors[r] });
+    if (DB.activities.length > 20) DB.activities.pop();
+    renderFeed('activityFeedSmall');
+    renderFeed('fullFeed');
+  }, 15000);
+}
+
+// Start
+document.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
+});
+</script>
+</body>
+</html>
