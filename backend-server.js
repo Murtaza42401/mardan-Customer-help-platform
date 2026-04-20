@@ -385,7 +385,10 @@ app.post('/api/campaigns/:id/contribute', auth, async (req, res) => {
 });
 
 // ── HEALTH CHECK ────────────────────────────────────────────────
-app.get('/api/health', (req, res) => res.json({ status:'ok', time: new Date(), city:'Mardan' }));
+// ── ROOT ROUTE ──────────────────────────────────────────────────
+app.get("/", (req, res) => {
+  res.send("API is running");
+});
 
 // ── START ───────────────────────────────────────────────────────
 app.listen(PORT, () => console.log(`🏙️ Mardan Help Portal API running on port ${PORT}`));
