@@ -1269,18 +1269,43 @@ function switchAuthTab(tab) {
   document.getElementById('loginForm').style.display = tab==='login'?'block':'none';
   document.getElementById('signupForm').style.display = tab==='signup'?'block':'none';
 }
-function doLogin() {
+async function doLogin() {
   const email = document.getElementById('loginEmail').value;
-  const pass = document.getElementById('loginPass').value;
-  if (!email || !pass) { showNotif('Please fill in all fields','error'); return; }
-  const token = btoa(email + ':' + Date.now());
-  localStorage.setItem('mhp_token', token);
-  localStorage.setItem('mhp_user', JSON.stringify(DB.user));
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('mainApp').style.display = 'flex';
-  document.getElementById('chatbotContainer').style.display = 'block';
-  initApp();
-  showNotif('Welcome back, Ahmad Khan! 👋','success');
+  const password = document.getElementById('loginPass').value;
+
+  if (!email || !password) {
+    showNotif('Please fill all fields', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    console.log(data);
+
+    if (!res.ok) {
+      showNotif(data.error || 'Login failed', 'error');
+      return;
+    }
+
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+    document.getElementById('chatbotContainer').style.display = 'block';
+
+    showNotif('Login successful', 'success');
+
+  } catch (err) {
+    console.error(err);
+    showNotif('Server error', 'error');
+  }
 }
 function doSignup() {
   const first = document.getElementById('signupFirst').value;
