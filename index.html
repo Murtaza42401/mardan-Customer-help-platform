@@ -1305,17 +1305,28 @@ async function doLogin() {
     showNotif('Server error. Try again.','error');
   }
 }
-function doSignup() {
-  const first = document.getElementById('signupFirst').value;
-  const last = document.getElementById('signupLast').value;
+async function doSignup() {
+  const first_name = document.getElementById('signupFirst').value;
+  const last_name = document.getElementById('signupLast').value;
   const email = document.getElementById('signupEmail').value;
-  const pass = document.getElementById('signupPass').value;
-  if (!first||!last||!email||!pass) { showNotif('Please fill in all fields','error'); return; }
-  if (pass.length < 8) { showNotif('Password must be 8+ characters','error'); return; }
-  DB.user.name = first + ' ' + last;
-  DB.user.email = email;
-  DB.user.avatar = (first[0]+last[0]).toUpperCase();
-  doLogin();
+  const password = document.getElementById('signupPass').value;
+  if (!first_name||!last_name||!email||!password) { showNotif('Please fill in all fields','error'); return; }
+  if (password.length < 8) { showNotif('Password must be 8+ characters','error'); return; }
+  try {
+    const res = await fetch(API + '/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ first_name, last_name, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) { showNotif(data.error || 'Registration failed','error'); return; }
+    localStorage.setItem('mhp_token', data.token);
+    localStorage.setItem('mhp_user', JSON.stringify(data.user));
+    showNotif('Account created! Welcome to Mardan Help Portal!','success');
+    setTimeout(() => location.reload(), 1000);
+  } catch(err) {
+    showNotif('Connection error. Please try again.','error');
+  }
 }
 function checkAuth() {
   const token = localStorage.getItem('mhp_token');
