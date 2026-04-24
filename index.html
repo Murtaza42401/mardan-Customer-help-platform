@@ -1880,48 +1880,33 @@ function updateUserUI() {
 function renderProfile() {
   
 function renderProfile() {
-   if (document.getElementById('pfFirst')) document.getElementById('pfFirst').value = '';
+  if (document.getElementById('pfFirst')) document.getElementById('pfFirst').value = '';
   if (document.getElementById('pfLast')) document.getElementById('pfLast').value = '';
   if (document.getElementById('pfEmail')) document.getElementById('pfEmail').value = '';
   if (document.getElementById('pfPhone')) document.getElementById('pfPhone').value = '';
   if (document.getElementById('profileName')) document.getElementById('profileName').textContent = '';
   if (document.getElementById('profileEmail')) document.getElementById('profileEmail').textContent = '';
-  const token = localStorage.getItem('mhp_token');
-  const stored = localStorage.getItem('mhp_user');
-  if (!stored) return;
-  const user = JSON.parse(stored);
-  const name = (user.first_name || '') + ' ' + (user.last_name || '');
-  const initials = (user.first_
-  const token = localStorage.getItem('mhp_token');
-  const stored = localStorage.getItem('mhp_user');
-  if (!stored) return;
-  const user = JSON.parse(stored);
-  const name = (user.first_name || '') + ' ' + (user.last_name || '');
-  const initials = (user.first_name?.[0] || '') + (user.last_name?.[0] || '');
 
-  if (document.getElementById('profileName')) 
-    document.getElementById('profileName').textContent = name;
-  if (document.getElementById('profileEmail')) 
-    document.getElementById('profileEmail').textContent = user.email;
-  if (document.getElementById('bigAvatar')) 
-    document.getElementById('bigAvatar').textContent = initials.toUpperCase();
-  if (document.getElementById('pfFirst')) 
-    document.getElementById('pfFirst').value = user.first_name || '';
-  if (document.getElementById('pfLast')) 
-    document.getElementById('pfLast').value = user.last_name || '';
+  const token = localStorage.getItem('mhp_token');
+  if (!token) return;
 
   fetch(API + '/api/users/me', {
     headers: { 'Authorization': 'Bearer ' + token }
   })
   .then(r => r.json())
   .then(u => {
-    if (document.getElementById('pfEmail'))
-      document.getElementById('pfEmail').value = u.email || '';
-    if (document.getElementById('pfPhone'))
-      document.getElementById('pfPhone').value = u.phone || '';
+    const name = (u.first_name || '') + ' ' + (u.last_name || '');
+    const initials = (u.first_name?.[0] || '') + (u.last_name?.[0] || '');
+    if (document.getElementById('profileName')) document.getElementById('profileName').textContent = name;
+    if (document.getElementById('profileEmail')) document.getElementById('profileEmail').textContent = u.email || '';
+    if (document.getElementById('bigAvatar')) document.getElementById('bigAvatar').textContent = initials.toUpperCase();
+    if (document.getElementById('pfFirst')) document.getElementById('pfFirst').value = u.first_name || '';
+    if (document.getElementById('pfLast')) document.getElementById('pfLast').value = u.last_name || '';
+    if (document.getElementById('pfEmail')) document.getElementById('pfEmail').value = u.email || '';
+    if (document.getElementById('pfPhone')) document.getElementById('pfPhone').value = u.phone || '';
     const pointsEl = document.querySelector('.points-badge');
     if (pointsEl) pointsEl.textContent = '⭐ ' + (u.points || 0) + ' pts';
-    localStorage.setItem('mhp_user', JSON.stringify({...user, ...u}));
+    localStorage.setItem('mhp_user', JSON.stringify(u));
   })
   .catch(err => console.log('Profile load error:', err));
 }
