@@ -127,7 +127,17 @@ app.post('/api/users/avatar', auth, upload.single('avatar'), async (req, res) =>
   await pool.query('UPDATE users SET avatar_url=$1 WHERE id=$2', [url, req.user.id]);
   res.json({ avatar_url: url });
 });
-
+app.get('/api/users/me', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, first_name, last_name, email, phone, area, role, points, verified, avatar_url
+       FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'User not found' });
+    res.json(result.rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 app.get('/api/users/leaderboard', async (req, res) => {
   try {
     const result = await pool.query(
