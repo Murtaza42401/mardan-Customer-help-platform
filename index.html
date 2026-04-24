@@ -2142,6 +2142,8 @@ function initApp() {
       document.getElementById('statProgress').textContent = data.in_progress || 0;
     if (document.getElementById('statSolved')) 
       document.getElementById('statSolved').textContent = data.resolved || 0;
+    if (document.getElementById('pendingBadge')) 
+      document.getElementById('pendingBadge').textContent = data.pending || 0;
   })
   .catch(err => console.log('Stats error:', err));
   renderProblems();
