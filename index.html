@@ -692,11 +692,11 @@ body {
     <div id="loginForm">
       <div class="form-group">
         <label class="form-label">Email Address</label>
-        <input type="email" class="form-input" placeholder="you@example.com" id="loginEmail" value="demo@mardan.pk">
+        <input type="email" class="form-input" placeholder="you@example.com" id="loginEmail">
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input type="password" class="form-input" placeholder="Enter password" id="loginPass" value="demo1234">
+        <input type="password" class="form-input" placeholder="Enter password" id="loginPass">
       </div>
       <div class="forgot-link">Forgot password?</div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;" onclick="doLogin()">Sign In →</button>
@@ -705,8 +705,8 @@ body {
     </div>
     <div id="signupForm" style="display:none">
       <div class="form-row">
-        <div class="form-group"><label class="form-label">First Name</label><input type="text" class="form-input" placeholder="Ahmad" id="signupFirst"></div>
-        <div class="form-group"><label class="form-label">Last Name</label><input type="text" class="form-input" placeholder="Khan" id="signupLast"></div>
+        <div class="form-group"><label class="form-label">First Name</label><input type="text" class="form-input" placeholder="Murtaza" id="signupFirst"></div>
+        <div class="form-group"><label class="form-label">Last Name</label><input type="text" class="form-input" placeholder="Iqbal" id="signupLast"></div>
       </div>
       <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" placeholder="you@example.com" id="signupEmail"></div>
       <div class="form-group"><label class="form-label">Phone (Optional)</label><input type="tel" class="form-input" placeholder="+92 300 1234567"></div>
@@ -1359,7 +1359,8 @@ function showPage(page) {
     if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) n.classList.add('active');
   });
   if (page === 'map') setTimeout(initMap, 100);
-  if (page === 'admin') renderAdminReports();
+if (page === 'admin') renderAdminReports();
+  if (page === 'profile') renderProfile();
   window.scrollTo(0,0);
 }
 function toggleSidebar() {
@@ -1458,18 +1459,27 @@ function getMarkerColor(status) {
 function addMapMarkers(filter) {
   mapMarkers.forEach(m => mapInstance.removeLayer(m));
   mapMarkers = [];
-  DB.problems.forEach(p => {
-    if (filter !== 'all' && p.category.toLowerCase() !== filter && p.priority.toLowerCase() !== filter) return;
-    const color = p.priority === 'Emergency' ? '#ff5a5a' : getMarkerColor(p.status);
-    const icon = L.divIcon({
-      className:'',
-      html:`<div style="width:28px;height:28px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:12px;">${p.category==='Road'?'🛣️':p.category==='Water'?'💧':p.category==='Garbage'?'🗑️':p.category==='Electric'?'⚡':p.category==='Health'?'🏥':'📌'}</div>`,
-      iconSize:[28,28], iconAnchor:[14,14]
+  fetch(API + '/api/problems?limit=100')
+  .then(r => r.json())
+  .then(data => {
+    const problems = data.problems || [];
+    problems.forEach(p => {
+      if (filter !== 'all' && p.category.toLowerCase() !== filter && (p.priority||'').toLowerCase() !== filter) return;
+      const color = p.priority === 'Emergency' ? '#ff5a5a' : getMarkerColor(p.status);
+      const icon = L.divIcon({
+        className:'',
+        html:`<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.4)"></div>`,
+        iconSize:[14,14]
+      });
+      const lat = parseFloat(p.latitude) || 34.1988;
+      const lng = parseFloat(p.longitude) || 72.0247;
+      const marker = L.marker([lat, lng], {icon})
+        .addTo(mapInstance)
+        .bindPopup(`<strong>${p.title}</strong><br>${p.category} • ${p.status}<br>📍 ${p.location}`);
+      mapMarkers.push(marker);
     });
-    const marker = L.marker([p.lat, p.lng], {icon}).addTo(mapInstance);
-    marker.bindPopup(`<div style="min-width:180px"><strong style="font-size:13px">${p.title}</strong><br><small style="color:#888">${p.location} • ${p.time}</small><br><span style="font-size:11px;background:${color};color:#fff;padding:2px 8px;border-radius:10px;margin-top:4px;display:inline-block">${p.status}</span><br><small>${p.votes} votes</small></div>`);
-    mapMarkers.push(marker);
-  });
+  })
+  .catch(() => console.log('Could not load map markers'));
 }
 function filterMap(type, el) {
   document.querySelectorAll('#page-map .filter-chip').forEach(c => c.classList.remove('active'));
@@ -1482,43 +1492,63 @@ function filterMap(type, el) {
 // ═══════════════════════════════════════════
 function renderProblems() {
   const grid = document.getElementById('problemsGrid');
+  if (!grid) return;
   const search = (document.getElementById('searchInput')||{}).value||'';
   const sort = (document.getElementById('sortSelect')||{}).value||'';
-  let list = [...DB.problems];
+  
+  let url = API + '/api/problems?limit=50';
   if (currentFilter !== 'All') {
-    if (['Pending','Done','Progress'].includes(currentFilter)) {
-      list = list.filter(p => p.status.toLowerCase().includes(currentFilter.toLowerCase().replace('done','done').replace('pending','pending')));
+    if (['pending','done','progress'].includes(currentFilter.toLowerCase())) {
+      url += '&status=' + currentFilter.toLowerCase();
     } else {
-      list = list.filter(p => p.category === currentFilter || p.priority === currentFilter);
+      url += '&category=' + currentFilter;
     }
   }
-  if (search) list = list.filter(p => p.title.toLowerCase().includes(search.toLowerCase()) || p.desc.toLowerCase().includes(search.toLowerCase()) || p.location.toLowerCase().includes(search.toLowerCase()));
-  if (sort.includes('Votes')) list.sort((a,b) => b.votes - a.votes);
-  if (sort.includes('Pending')) list.sort((a,b) => (a.status==='pending'?0:1)-(b.status==='pending'?0:1));
-  grid.innerHTML = list.map(p => problemCard(p)).join('');
-  if (!list.length) grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No problems found matching your filters</p></div>';
+  if (search) url += '&search=' + encodeURIComponent(search);
+
+  grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Loading...</div>';
+
+  fetch(url)
+  .then(r => r.json())
+  .then(data => {
+    let problems = data.problems || [];
+    if (sort.includes('Votes')) problems.sort((a,b) => (b.vote_count||0) - (a.vote_count||0));
+    if (!problems.length) {
+      grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No problems found</p></div>';
+      return;
+    }
+    grid.innerHTML = problems.map(p => problemCard(p)).join('');
+  })
+  .catch(() => {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Could not load problems</p></div>';
+  });
 }
 function problemCard(p) {
   const statusMap = { pending:'badge-pending', progress:'badge-progress', done:'badge-done' };
   const statusLabel = { pending:'Pending', progress:'In Progress', done:'Resolved' };
   const priorityColor = { Low:'var(--text3)', Medium:'var(--amber)', High:'var(--red)', Emergency:'var(--red)' };
+  const desc = (p.description || p.desc || '').substring(0,110);
+  const votes = p.vote_count || p.votes || 0;
+  const comments = p.comment_count || p.comments || 0;
+  const progress = p.progress_percentage || p.progress || 0;
+  const time = p.created_at ? new Date(p.created_at).toLocaleDateString() : (p.time || '');
   return `<div class="problem-card" onclick="openProblem(${p.id})">
     <div class="problem-meta">
-      <span class="badge ${statusMap[p.status]}">${statusLabel[p.status]}</span>
+      <span class="badge ${statusMap[p.status]||'badge-pending'}">${statusLabel[p.status]||p.status}</span>
       <span class="cat-tag">${p.category}</span>
-      <span style="font-size:11px;color:${priorityColor[p.priority]}">${p.priority==='Emergency'?'🚨':p.priority==='High'?'🔴':''}${p.priority}</span>
+      <span style="font-size:11px;color:${priorityColor[p.priority]||'var(--text3)'}">${p.priority==='Emergency'?'🚨':p.priority==='High'?'🔴':''}${p.priority||''}</span>
       ${p.verified?'<span class="verified" title="Verified">✓</span>':''}
     </div>
     <div class="problem-title">${p.title}</div>
-    <div class="problem-desc">${p.desc.substring(0,110)}...</div>
-    ${p.status==='progress'?`<div style="margin-bottom:10px"><div class="progress-bar"><div class="progress-fill blue" style="width:${p.progress}%"></div></div><div style="font-size:11px;color:var(--text3);margin-top:4px">${p.progress}% complete</div></div>`:''}
+    <div class="problem-desc">${desc}...</div>
+    ${p.status==='progress'?`<div style="margin-bottom:10px"><div class="progress-bar"><div class="progress-fill blue" style="width:${progress}%"></div></div><div style="font-size:11px;color:var(--text3);margin-top:4px">${progress}% complete</div></div>`:''}
     <div class="problem-footer">
       <div class="problem-stats">
         <span class="pstat">📍 ${p.location}</span>
-        <span class="pstat">💬 ${p.comments}</span>
-        <span class="pstat">🕐 ${p.time}</span>
+        <span class="pstat">💬 ${comments}</span>
+        <span class="pstat">🕐 ${time}</span>
       </div>
-      <div class="vote-btn ${p._voted?'voted':''}" onclick="event.stopPropagation();vote(${p.id},this)">▲ ${p.votes}</div>
+      <div class="vote-btn" onclick="event.stopPropagation();vote(${p.id},this)">▲ ${votes}</div>
     </div>
   </div>`;
 }
@@ -1530,42 +1560,75 @@ function setFilter(f, el) {
   renderProblems();
 }
 function vote(id, el) {
-  const p = DB.problems.find(x=>x.id===id);
-  if (!p) return;
-  if (p._voted) { p.votes--; p._voted=false; el.classList.remove('voted'); el.textContent='▲ '+p.votes; showNotif('Vote removed','info'); }
-  else { p.votes++; p._voted=true; el.classList.add('voted'); el.textContent='▲ '+p.votes; showNotif('+10 points for voting!','success'); DB.user.points+=10; }
-  renderProblems();
+  const token = localStorage.getItem('mhp_token');
+  fetch(API + '/api/problems/' + id + '/vote', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.voted) {
+      el.classList.add('voted');
+      showNotif('+10 points for voting!', 'success');
+    } else {
+      el.classList.remove('voted');
+      showNotif('Vote removed', 'info');
+    }
+    const countEl = el;
+    countEl.textContent = '▲ ' + (data.votes || 0);
+  })
+  .catch(() => showNotif('Could not vote. Try again.', 'error'));
 }
 function openProblem(id) {
-  const p = DB.problems.find(x=>x.id===id);
-  if (!p) return;
+  const token = localStorage.getItem('mhp_token');
   const statusMap = { pending:'badge-pending', progress:'badge-progress', done:'badge-done' };
   const statusLabel = { pending:'Pending', progress:'In Progress', done:'Resolved' };
-  document.getElementById('problemModalContent').innerHTML = `
-    <div class="badge ${statusMap[p.status]}" style="margin-bottom:12px">${statusLabel[p.status]}</div>
-    <div class="modal-title">${p.title}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-      <span class="cat-tag">${p.category}</span>
-      <span class="cat-tag">📍 ${p.location}</span>
-      <span class="cat-tag">👤 ${p.reporter}</span>
-      <span class="cat-tag">🕐 ${p.time}</span>
-      ${p.verified?'<span class="badge badge-verified">✓ Verified</span>':''}
-    </div>
-    <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:16px">${p.desc}</p>
-    ${p.status==='progress'?`<div style="margin-bottom:16px"><div style="font-size:12px;margin-bottom:6px">Progress: <strong>${p.progress}%</strong></div><div class="progress-bar" style="height:10px"><div class="progress-fill blue" style="width:${p.progress}%"></div></div></div>`:''}
-    <div class="sep"></div>
-    <div style="font-size:14px;font-weight:600;margin-bottom:12px">Timeline</div>
-    <div class="timeline">
-      <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">${p.time}</div><div class="tl-text">Report submitted by ${p.reporter}</div></div>
-      ${p.status!=='pending'?`<div class="tl-item"><div class="tl-dot progress"></div><div class="tl-date">Recently</div><div class="tl-text">Issue accepted by TMA Mardan, team assigned</div></div>`:''}
-      ${p.status==='done'?`<div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">Completed</div><div class="tl-text">Issue resolved and verified by admin</div></div>`:`<div class="tl-item"><div class="tl-dot pending"></div><div class="tl-date">Pending</div><div class="tl-text">Awaiting resolution...</div></div>`}
-    </div>
-    <div class="sep"></div>
-    <div style="display:flex;gap:10px;margin-top:4px">
-      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="vote(${p.id},this);closeModal('problemModal')">▲ Upvote (${p.votes})</button>
-      <button class="btn btn-success" style="flex:1;justify-content:center">Share</button>
-    </div>`;
+  
+  document.getElementById('problemModalContent').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3)">Loading...</div>';
   document.getElementById('problemModal').classList.add('open');
+
+  fetch(API + '/api/problems/' + id, {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(r => r.json())
+  .then(p => {
+    const desc = p.description || p.desc || '';
+    const votes = p.vote_count || p.votes || 0;
+    const progress = p.progress_percentage || p.progress || 0;
+    const time = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
+    const reporter = p.reporter_name || 'Unknown';
+
+    document.getElementById('problemModalContent').innerHTML = `
+      <div class="badge ${statusMap[p.status]||'badge-pending'}" style="margin-bottom:12px">${statusLabel[p.status]||p.status}</div>
+      <div class="modal-title">${p.title}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        <span class="cat-tag">${p.category}</span>
+        <span class="cat-tag">📍 ${p.location}</span>
+        <span class="cat-tag">👤 ${reporter}</span>
+        <span class="cat-tag">🕐 ${time}</span>
+        ${p.verified?'<span class="badge badge-verified">✓ Verified</span>':''}
+      </div>
+      <p style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:16px">${desc}</p>
+      ${p.status==='progress'?`<div style="margin-bottom:16px"><div style="font-size:12px;margin-bottom:6px">Progress: <strong>${progress}%</strong></div><div class="progress-bar" style="height:10px"><div class="progress-fill blue" style="width:${progress}%"></div></div></div>`:''}
+      <div class="sep"></div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px">Timeline</div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">${time}</div><div class="tl-text">Report submitted by ${reporter}</div></div>
+        ${p.status!=='pending'?`<div class="tl-item"><div class="tl-dot progress"></div><div class="tl-date">Recently</div><div class="tl-text">Issue accepted by TMA Mardan, team assigned</div></div>`:''}
+        ${p.status==='done'?`<div class="tl-item"><div class="tl-dot done"></div><div class="tl-date">Completed</div><div class="tl-text">Issue resolved and verified by admin</div></div>`:`<div class="tl-item"><div class="tl-dot pending"></div><div class="tl-date">Pending</div><div class="tl-text">Awaiting resolution...</div></div>`}
+      </div>
+      <div class="sep"></div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="vote(${p.id},this)">▲ Upvote (${votes})</button>
+        <button class="btn btn-success" style="flex:1;justify-content:center">Share</button>
+      </div>`;
+  })
+  .catch(() => {
+    document.getElementById('problemModalContent').innerHTML = '<div style="padding:16px;color:var(--text3)">Could not load problem details.</div>';
+  });
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
@@ -1606,53 +1669,104 @@ function submitReport() {
   const title = document.getElementById('rTitle').value;
   const desc = document.getElementById('rDesc').value;
   const loc = document.getElementById('rLocation').value;
+  const priority = document.getElementById('rPriority').value;
   if (!cat||!title||!desc) { showNotif('Please fill in Category, Title and Description','error'); return; }
-  const newP = {
-    id: DB.problems.length + 1, title, category: cat.split(' ')[0], location: loc, desc,
-    status:'pending', votes:0, reporter: DB.user.name, time:'Just now',
-    lat: 34.1988 + (Math.random()-0.5)*0.04, lng: 72.0247 + (Math.random()-0.5)*0.04,
-    priority: document.getElementById('rPriority').value, verified:false, images:[], comments:0, progress:0
-  };
-  DB.problems.unshift(newP);
-  DB.user.points += 50;
-  document.getElementById('statTotal').textContent = DB.problems.length;
-  document.getElementById('statPending').textContent = DB.problems.filter(p=>p.status==='pending').length;
-  document.getElementById('pendingBadge').textContent = DB.problems.filter(p=>p.status==='pending').length;
-  DB.activities.unshift({ type:'report', text:`<strong>${DB.user.name}</strong> reported a new ${cat} issue in ${loc}`, time:'Just now', color:'var(--red)' });
-  document.getElementById('rTitle').value=''; document.getElementById('rDesc').value='';
-  document.getElementById('previewGrid').innerHTML='';
-  showNotif('✅ Report submitted! +50 points earned. Community notified!','success');
-  setTimeout(() => showPage('problems'), 1500);
+  
+  const token = localStorage.getItem('mhp_token');
+  fetch(API + '/api/problems', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({
+      title,
+      description: desc,
+      category: cat.split(' ')[0],
+      location: loc || 'Mardan',
+      priority: priority || 'Medium',
+      latitude: 34.1988 + (Math.random()-0.5)*0.04,
+      longitude: 72.0247 + (Math.random()-0.5)*0.04
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) { showNotif(data.error, 'error'); return; }
+    document.getElementById('rTitle').value = '';
+    document.getElementById('rDesc').value = '';
+    if (document.getElementById('previewGrid'))
+      document.getElementById('previewGrid').innerHTML = '';
+    showNotif('✅ Report submitted! +50 points earned. Community notified!', 'success');
+    setTimeout(() => showPage('problems'), 1500);
+  })
+  .catch(() => showNotif('Could not submit report. Try again.', 'error'));
 }
 
 // ═══════════════════════════════════════════
 //  LEADERBOARD
 // ═══════════════════════════════════════════
 function renderLeaderboard() {
-  const max = DB.leaderboard[0].points;
-  document.getElementById('leaderboardList').innerHTML = DB.leaderboard.map((u,i) => `
-    <div class="lb-item">
-      <div class="lb-rank ${['r1','r2','r3','r4'][Math.min(i,3)]}">${i+1}</div>
-      <div class="avatar" style="width:32px;height:32px;font-size:12px">${u.initials}</div>
-      <div class="lb-info">
-        <div class="lb-name">${u.name} ${u.name===DB.user.name?'<span style="color:var(--accent2);font-size:10px">(You)</span>':''}</div>
-        <div class="lb-contrib">${u.reports} reports • ${u.area}</div>
-        <div class="lb-bar"><div class="lb-bar-fill" style="width:${Math.round(u.points/max*100)}%"></div></div>
-      </div>
-      <div class="lb-points">${u.points}</div>
-    </div>`).join('');
+  const el = document.getElementById('leaderboardList');
+  if (!el) return;
+  const stored = localStorage.getItem('mhp_user');
+  const currentUser = stored ? JSON.parse(stored) : null;
+
+  fetch(API + '/api/leaderboard')
+  .then(r => r.json())
+  .then(data => {
+    const users = data.leaderboard || data || [];
+    if (!users.length) {
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3)">No data yet.</div>';
+      return;
+    }
+    const max = users[0].points || 1;
+    el.innerHTML = users.map((u, i) => {
+      const name = (u.first_name || '') + ' ' + (u.last_name || '');
+      const initials = (u.first_name?.[0] || '') + (u.last_name?.[0] || '');
+      const isYou = currentUser && u.id === currentUser.id;
+      return `<div class="lb-item">
+        <div class="lb-rank ${['r1','r2','r3','r4'][Math.min(i,3)]}">${i+1}</div>
+        <div class="avatar" style="width:32px;height:32px;font-size:12px">${initials.toUpperCase()}</div>
+        <div class="lb-info">
+          <div class="lb-name">${name} ${isYou?'<span style="color:var(--accent2);font-size:10px">(You)</span>':''}</div>
+          <div class="lb-contrib">${u.points} points • ${u.area || 'Mardan'}</div>
+          <div class="lb-bar"><div class="lb-bar-fill" style="width:${Math.round((u.points||0)/max*100)}%"></div></div>
+        </div>
+        <div class="lb-points">${u.points}</div>
+      </div>`;
+    }).join('');
+  })
+  .catch(() => {
+    el.innerHTML = '<div style="padding:16px;color:var(--text3)">Could not load leaderboard.</div>';
+  });
 }
 
 // ═══════════════════════════════════════════
 //  FEED
 // ═══════════════════════════════════════════
 function renderFeed(containerId) {
-  const html = DB.activities.map(a => `
-    <div class="feed-item">
-      <div class="feed-dot" style="background:${a.color}"></div>
-      <div><div class="feed-text">${a.text}</div><div class="feed-time">${a.time}</div></div>
-    </div>`).join('');
-  if (document.getElementById(containerId)) document.getElementById(containerId).innerHTML = html;
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  fetch(API + '/api/activities')
+  .then(r => r.json())
+  .then(data => {
+    const activities = data.activities || data || [];
+    if (!activities.length) {
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">No activity yet.</div>';
+      return;
+    }
+    el.innerHTML = activities.map(a => `
+      <div class="feed-item">
+        <div class="feed-dot" style="background:var(--accent)"></div>
+        <div>
+          <div class="feed-text">${a.description || a.text || ''}</div>
+          <div class="feed-time">${a.created_at ? new Date(a.created_at).toLocaleDateString() : ''}</div>
+        </div>
+      </div>`).join('');
+  })
+  .catch(() => {
+    el.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:13px">Could not load activity.</div>';
+  });
 }
 function renderAnnouncements() {
   if (!document.getElementById('announcements')) return;
@@ -1667,34 +1781,69 @@ function renderAnnouncements() {
 //  DONATIONS
 // ═══════════════════════════════════════════
 function renderDonations() {
-  if (!document.getElementById('donationCampaigns')) return;
-  document.getElementById('donationCampaigns').innerHTML = DB.donations.map(d => {
-    const pct = Math.round(d.raised/d.target*100);
-    return `<div class="donation-bar">
-      <div class="donation-header">
-        <div>
-          <div class="donation-title">${d.title}</div>
-          <div class="donation-target">Goal: ₨${(d.target/1000).toFixed(0)}K • ${d.backers} backers</div>
+  const el = document.getElementById('donationCampaigns');
+  if (!el) return;
+  fetch(API + '/api/campaigns')
+  .then(r => r.json())
+  .then(data => {
+    const campaigns = data.campaigns || data || [];
+    if (!campaigns.length) {
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3)">No campaigns yet.</div>';
+      return;
+    }
+    el.innerHTML = campaigns.map(d => {
+      const raised = d.raised || 0;
+      const pct = Math.round((raised / d.target) * 100);
+      return `<div class="donation-bar">
+        <div class="donation-header">
+          <div>
+            <div class="donation-title">${d.title}</div>
+            <div class="donation-target">Goal: ₨${(d.target/1000).toFixed(0)}K</div>
+          </div>
+          <div class="donation-amount">₨${(raised/1000).toFixed(0)}K</div>
         </div>
-        <div class="donation-amount">₨${(d.raised/1000).toFixed(0)}K</div>
-      </div>
-      <div class="progress-bar" style="height:8px;margin-bottom:4px"><div class="progress-fill green" style="width:${pct}%"></div></div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)"><span>${pct}% funded</span><span>${d.status}</span></div>
-    </div>`;
-  }).join('');
+        <div class="progress-bar" style="height:8px;margin-bottom:4px">
+          <div class="progress-fill green" style="width:${Math.min(pct,100)}%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3)">
+          <span>${pct}% funded</span>
+          <span>${d.active ? 'Active' : 'Closed'}</span>
+        </div>
+      </div>`;
+    }).join('');
+  })
+  .catch(() => {
+    el.innerHTML = '<div style="padding:16px;color:var(--text3)">Could not load campaigns.</div>';
+  });
 }
 
 // ═══════════════════════════════════════════
 //  PROFILE
 // ═══════════════════════════════════════════
 function saveProfile() {
-  const first = document.getElementById('pfFirst').value;
-  const last = document.getElementById('pfLast').value;
-  DB.user.name = first + ' ' + last;
-  DB.user.email = document.getElementById('pfEmail').value;
-  DB.user.avatar = (first[0]+last[0]).toUpperCase();
-  updateUserUI();
-  showNotif('Profile saved!','success');
+  const first_name = document.getElementById('pfFirst').value;
+  const last_name = document.getElementById('pfLast').value;
+  const token = localStorage.getItem('mhp_token');
+  
+  fetch(API + '/api/users/profile', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({ first_name, last_name })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) { showNotif(data.error, 'error'); return; }
+    const stored = JSON.parse(localStorage.getItem('mhp_user') || '{}');
+    stored.first_name = first_name;
+    stored.last_name = last_name;
+    localStorage.setItem('mhp_user', JSON.stringify(stored));
+    updateUserUI();
+    showNotif('Profile saved!', 'success');
+  })
+  .catch(() => showNotif('Could not save profile.', 'error'));
 }
 function updateAvatar(e) {
   const file = e.target.files[0];
@@ -1728,14 +1877,51 @@ function updateUserUI() {
     if (pe) pe.value = user.email;
   }
 }
+function renderProfile() {
+  const stored = localStorage.getItem('mhp_user');
+  if (!stored) return;
+  const user = JSON.parse(stored);
+  const name = (user.first_name || '') + ' ' + (user.last_name || '');
+  const initials = (user.first_name ? user.first_name[0] : '') + (user.last_name ? user.last_name[0] : '');
+
+  if (document.getElementById('profileName')) 
+    document.getElementById('profileName').textContent = name;
+  if (document.getElementById('profileEmail')) 
+    document.getElementById('profileEmail').textContent = user.email;
+  if (document.getElementById('bigAvatar')) 
+    document.getElementById('bigAvatar').textContent = initials.toUpperCase();
+  if (document.getElementById('pfFirst')) 
+    document.getElementById('pfFirst').value = user.first_name || '';
+  if (document.getElementById('pfLast')) 
+    document.getElementById('pfLast').value = user.last_name || '';
+}
 function renderMyReports() {
   const el = document.getElementById('myReports');
   if (!el) return;
-  const mine = DB.problems.filter((_,i) => i < 3);
-  el.innerHTML = mine.map(p => `<div style="padding:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-    <div><div style="font-size:13px;font-weight:600">${p.title}</div><div style="font-size:11px;color:var(--text3)">${p.location} • ${p.time}</div></div>
-    <span class="badge badge-${p.status==='done'?'done':p.status==='progress'?'progress':'pending'}">${p.status}</span>
-  </div>`).join('');
+  const token = localStorage.getItem('mhp_token');
+  if (!token) return;
+  fetch(API + '/api/problems/my', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(r => r.json())
+  .then(data => {
+    const problems = data.problems || [];
+    if (problems.length === 0) {
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">No reports yet. Report your first issue!</div>';
+      return;
+    }
+    el.innerHTML = problems.slice(0,5).map(p => `
+      <div style="padding:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:13px;font-weight:600">${p.title}</div>
+          <div style="font-size:11px;color:var(--text3)">${p.location} • ${new Date(p.created_at).toLocaleDateString()}</div>
+        </div>
+        <span class="badge badge-${p.status==='done'?'done':p.status==='progress'?'progress':'pending'}">${p.status}</span>
+      </div>`).join('');
+  })
+  .catch(() => {
+    el.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:13px">Could not load reports.</div>';
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -1744,15 +1930,27 @@ function renderMyReports() {
 function renderRecentProblems() {
   const el = document.getElementById('recentProblems');
   if (!el) return;
-  el.innerHTML = DB.problems.slice(0,4).map(p => `
-    <div style="padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openProblem(${p.id})">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-        <span class="badge badge-${p.status==='done'?'done':p.status==='progress'?'progress':'pending'}" style="font-size:10px">${p.status}</span>
-        <span style="font-size:11px;color:var(--text3)">${p.category}</span>
-      </div>
-      <div style="font-size:13px;font-weight:600">${p.title}</div>
-      <div style="font-size:11px;color:var(--text3)">📍 ${p.location} • ▲ ${p.votes}</div>
-    </div>`).join('');
+  fetch(API + '/api/problems?limit=4')
+  .then(r => r.json())
+  .then(data => {
+    const problems = data.problems || [];
+    if (problems.length === 0) {
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px">No problems reported yet.</div>';
+      return;
+    }
+    el.innerHTML = problems.map(p => `
+      <div style="padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openProblem(${p.id})">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span class="badge badge-${p.status==='done'?'done':p.status==='progress'?'progress':'pending'}" style="font-size:10px">${p.status}</span>
+          <span style="font-size:11px;color:var(--text3)">${p.category}</span>
+        </div>
+        <div style="font-size:13px;font-weight:600">${p.title}</div>
+        <div style="font-size:11px;color:var(--text3)">📍 ${p.location} • ▲ ${p.vote_count || 0}</div>
+      </div>`).join('');
+  })
+  .catch(() => {
+    el.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:13px">Could not load problems.</div>';
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -1766,26 +1964,39 @@ function switchAdminTab(tab, el) {
   else if (tab==='emergency') renderAdminEmergency();
 }
 function renderAdminReports() {
-  document.getElementById('adminTabContent').innerHTML = `
-    <div class="card">
-      <table class="admin-table">
-        <thead><tr><th>#</th><th>Title</th><th>Category</th><th>Location</th><th>Reporter</th><th>Status</th><th>Votes</th><th>Action</th></tr></thead>
-        <tbody>${DB.problems.map(p=>`<tr>
-          <td style="color:var(--text3)">${p.id}</td>
-          <td><span style="font-weight:600;font-size:13px">${p.title.substring(0,40)}...</span></td>
-          <td><span class="cat-tag">${p.category}</span></td>
-          <td style="color:var(--text2)">${p.location}</td>
-          <td style="color:var(--text2)">${p.reporter}</td>
-          <td><span class="badge badge-${p.status==='done'?'done':p.status==='progress'?'progress':'pending'}">${p.status}</span></td>
-          <td style="font-weight:600">${p.votes}</td>
-          <td><select onchange="updateStatus(${p.id},this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;color:var(--text);cursor:pointer">
-            <option ${p.status==='pending'?'selected':''}>pending</option>
-            <option ${p.status==='progress'?'selected':''}>progress</option>
-            <option ${p.status==='done'?'selected':''}>done</option>
-          </select></td>
-        </tr>`).join('')}</tbody>
-      </table>
-    </div>`;
+  const el = document.getElementById('adminTabContent');
+  if (!el) return;
+  const token = localStorage.getItem('mhp_token');
+  fetch(API + '/api/problems?limit=100', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(r => r.json())
+  .then(data => {
+    const problems = data.problems || [];
+    el.innerHTML = `
+      <div class="card">
+        <table class="admin-table">
+          <thead><tr><th>#</th><th>Title</th><th>Category</th><th>Location</th><th>Reporter</th><th>Status</th><th>Votes</th><th>Action</th></tr></thead>
+          <tbody>${problems.map(p=>`<tr>
+            <td style="color:var(--text3)">${p.id}</td>
+            <td><span style="font-weight:600;font-size:13px">${(p.title||'').substring(0,40)}...</span></td>
+            <td><span class="cat-tag">${p.category}</span></td>
+            <td style="color:var(--text2)">${p.location}</td>
+            <td style="color:var(--text2)">${p.reporter_name || 'Unknown'}</td>
+            <td><span class="badge badge-${p.status==='done'?'done':p.status==='progress'?'progress':'pending'}">${p.status}</span></td>
+            <td style="font-weight:600">${p.vote_count||0}</td>
+            <td><select onchange="updateStatus(${p.id},this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;color:var(--text);cursor:pointer">
+              <option ${p.status==='pending'?'selected':''}>pending</option>
+              <option ${p.status==='progress'?'selected':''}>progress</option>
+              <option ${p.status==='done'?'selected':''}>done</option>
+            </select></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+  })
+  .catch(() => {
+    el.innerHTML = '<div style="padding:16px;color:var(--text3)">Could not load reports.</div>';
+  });
 }
 function renderAdminUsers() {
   const users = [
@@ -1828,10 +2039,22 @@ function renderAdminEmergency() {
   </div>`;
 }
 function updateStatus(id, status) {
-  const p = DB.problems.find(x=>x.id===id);
-  if (p) { p.status = status; if(status==='done')p.progress=100; if(status==='progress'&&p.progress===0)p.progress=30; }
-  showNotif(`Status updated to: ${status}`,'success');
-  renderProblems();
+  const token = localStorage.getItem('mhp_token');
+  fetch(API + '/api/problems/' + id + '/status', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({ status })
+  })
+  .then(r => r.json())
+  .then(() => {
+    showNotif('Status updated to: ' + status, 'success');
+    renderAdminReports();
+    renderProblems();
+  })
+  .catch(() => showNotif('Failed to update status', 'error'));
 }
 
 // ═══════════════════════════════════════════
@@ -1900,6 +2123,27 @@ function updateMapTime() {
 // ═══════════════════════════════════════════
 function initApp() {
   updateUserUI();
+  fetch(API + '/api/stats')
+  .then(r => r.json())
+  .then(data => {
+    if (document.getElementById('heroTotal')) 
+      document.getElementById('heroTotal').textContent = data.total || 0;
+    if (document.getElementById('heroSolved')) 
+      document.getElementById('heroSolved').textContent = data.resolved || 0;
+    if (document.getElementById('heroCitizens')) 
+      document.getElementById('heroCitizens').textContent = data.citizens || 0;
+   if (document.getElementById('heroImpact')) 
+      document.getElementById('heroImpact').textContent = (data.resolution_rate || 0) + '%';
+    if (document.getElementById('statTotal')) 
+      document.getElementById('statTotal').textContent = data.total || 0;
+    if (document.getElementById('statPending')) 
+      document.getElementById('statPending').textContent = data.pending || 0;
+    if (document.getElementById('statProgress')) 
+      document.getElementById('statProgress').textContent = data.in_progress || 0;
+    if (document.getElementById('statSolved')) 
+      document.getElementById('statSolved').textContent = data.resolved || 0;
+  })
+  .catch(err => console.log('Stats error:', err));
   renderProblems();
   renderLeaderboard();
   renderFeed('activityFeedSmall');
