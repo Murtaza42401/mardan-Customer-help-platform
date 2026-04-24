@@ -181,7 +181,24 @@ app.get('/api/problems/:id', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
-
+app.get('/api/problems/my', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.*, 
+       COUNT(DISTINCT v.id) as vote_count,
+       COUNT(DISTINCT c.id) as comment_count
+       FROM problems p
+       LEFT JOIN votes v ON v.problem_id = p.id
+       LEFT JOIN comments c ON c.problem_id = p.id
+       WHERE p.user_id = $1
+       GROUP BY p.id
+       ORDER BY p.created_at DESC
+       LIMIT 10`,
+      [req.user.id]
+    );
+    res.json({ problems: result.rows });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 app.post('/api/problems', auth, upload.array('images', 5), async (req, res) => {
   const { title, description, category, location, landmark, priority, latitude, longitude } = req.body;
   if (!title || !description || !category || !location)
