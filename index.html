@@ -1711,7 +1711,7 @@ function renderLeaderboard() {
   const stored = localStorage.getItem('mhp_user');
   const currentUser = stored ? JSON.parse(stored) : null;
 
-  fetch(API + '/api/leaderboard')
+  fetch(API + '/api/users/leaderboard')
   .then(r => r.json())
   .then(data => {
     const users = data.leaderboard || data || [];
