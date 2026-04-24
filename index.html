@@ -1878,11 +1878,12 @@ function updateUserUI() {
   }
 }
 function renderProfile() {
+  const token = localStorage.getItem('mhp_token');
   const stored = localStorage.getItem('mhp_user');
   if (!stored) return;
   const user = JSON.parse(stored);
   const name = (user.first_name || '') + ' ' + (user.last_name || '');
-  const initials = (user.first_name ? user.first_name[0] : '') + (user.last_name ? user.last_name[0] : '');
+  const initials = (user.first_name?.[0] || '') + (user.last_name?.[0] || '');
 
   if (document.getElementById('profileName')) 
     document.getElementById('profileName').textContent = name;
@@ -1894,6 +1895,21 @@ function renderProfile() {
     document.getElementById('pfFirst').value = user.first_name || '';
   if (document.getElementById('pfLast')) 
     document.getElementById('pfLast').value = user.last_name || '';
+
+  fetch(API + '/api/users/me', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(r => r.json())
+  .then(u => {
+    if (document.getElementById('pfEmail'))
+      document.getElementById('pfEmail').value = u.email || '';
+    if (document.getElementById('pfPhone'))
+      document.getElementById('pfPhone').value = u.phone || '';
+    const pointsEl = document.querySelector('.points-badge');
+    if (pointsEl) pointsEl.textContent = '⭐ ' + (u.points || 0) + ' pts';
+    localStorage.setItem('mhp_user', JSON.stringify({...user, ...u}));
+  })
+  .catch(err => console.log('Profile load error:', err));
 }
 function renderMyReports() {
   const el = document.getElementById('myReports');
